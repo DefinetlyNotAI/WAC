@@ -24,7 +24,7 @@ export const features: Feature[] = [
   {id:'region',title:'Region Locking',category:'Infrastructure',description:'Snoozing is banned in your detected OS region.'},
   {id:'queue',title:'Queue System',category:'Infrastructure',description:'14,892 fictional users are ahead of you.'},
   {id:'maintenance',title:'Server Maintenance',category:'Infrastructure',description:'A local timer pretends dismissal is unavailable.'},
-  {id:'rate',title:'Rate Limiting',category:'Infrastructure',description:'Too many clicks cause a fictional one-week lockout.'},
+  {id:'rate',title:'Sign-out Retention',category:'Infrastructure',description:'Signing out requires a seven-day account retention period.'},
   {id:'startup',title:'Fake Startup Loading',category:'Infrastructure',description:'wakefulness.exe stalls at 99% then verifies consciousness.'},
   {id:'terms',title:'Terms & Conditions',category:'Bureaucracy',description:'47 pages, with a fleeing I Disagree button.'},
   {id:'cookies',title:'Cookie Consent',category:'Bureaucracy',description:'Reject All rejects your right to silence.'},

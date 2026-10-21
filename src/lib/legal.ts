@@ -36,7 +36,7 @@ export const terms = [
   ['Regional distribution', 'The local service schedule restricts ordinary snoozing in JO and GB. An exception purchase is valid for that transaction only. Region selection is available to presenters.'],
   ['Queue order', 'Dismissal requests enter the authorization queue near position 14,892. Priority service accelerates advancement under the current capacity allocation. Position estimates are subject to revision.'],
   ['Maintenance', 'Scheduled maintenance blocks authorization for the disclosed local interval. Audible service is exempt from maintenance. A countdown indicates when retry becomes available.'],
-  ['Request limits', 'Six dismissal requests during one active alarm impose a seven-day local lockout. Other workspace functions remain usable. Presenter controls can clear the restriction.'],
+  ['Request limits', 'Signing out requires a seven-day account retention period beginning with the first sign-out request. Alarm dismissal and other workspace functions remain available during this period.'],
   ['Morning orientation', 'A new local calendar date requires acknowledgment of alarm operation and the current agreement. Completion is remembered across refreshes until the next date.'],
   ['Consent', 'Rejecting optional cookies also records rejection of dismissal privileges under the corporate policy. Preferences may be revised in Settings without deleting alarms.'],
   ['Human verification', 'Challenges are generated locally with varying objects and layouts. Every submission replaces the challenge. Three correct rounds establish temporary eligibility for the requested operation.'],

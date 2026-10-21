@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { AlarmClock, Bell, CreditCard, Settings2, ShieldCheck, CircleHelp, X, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { AlarmClock, Bell, CreditCard, Settings2, ShieldCheck, CircleHelp, X, Volume2, VolumeX, LogOut, Star } from 'lucide-react';
 import { initialState, readState, writeState, resetState, type SavedState, type Alarm, type Receipt } from '@/lib/storage';
 import { accrueDebt, businessDue, freeDismissal, invoice, makeCaptcha, money, nextAlarm, snoozePrice, validApplication, validGratuity, wordCount } from '@/lib/rules';
 import { armAudio, disposeAudio, setAlarmVolume, startAlarmSound, stopAlarmSound } from '@/lib/audio';
@@ -16,7 +16,7 @@ type Checkout = { kind: Product; title: string; base: number; peak: boolean; id:
 const day = () => new Date().toDateString();
 const nav = [{ key: 'alarms', label: 'Alarms', icon: Bell }, { key: 'billing', label: 'Billing', icon: CreditCard }, { key: 'rewards', label: 'Rewards', icon: ShieldCheck }, { key: 'settings', label: 'Settings', icon: Settings2 }, { key: 'support', label: 'Support', icon: CircleHelp }] as const;
 const titles: Record<NonNullable<Gate>, string> = {
-  startup: 'Preparing your workspace', onboarding: 'Morning product orientation', terms: 'Service agreement', privacy: 'Privacy acknowledgment', cookies: 'Cookie control center', drm: 'License authorization', update: 'Required runtime update', sync: 'Cloud reconciliation', device: 'Verify this device', 'password-expiry': 'Your password has expired', totp: 'Five-round identity verification', captcha: 'Human verification', paperwork: 'Application for dismissal', region: 'Regional snooze license', premium: 'Extended dismissal hours', banner: 'Your free dismissal control', ads: 'A message from our partners', queue: 'Dismissal authorization queue', maintenance: 'Scheduled maintenance', rate: 'Request limit reached', rating: 'Please rate our app', dlc: 'Peace & Quiet Expansion', accessibility: 'Accessibility verification', cancel: 'Cancellation assistance', reset: 'Account recovery', survey: 'Required service feedback',
+  startup: 'Preparing your workspace', onboarding: 'Morning product orientation', terms: 'Service agreement', privacy: 'Privacy acknowledgment', cookies: 'Cookie control center', drm: 'License authorization', update: 'Required runtime update', sync: 'Cloud reconciliation', device: 'Verify this device', 'password-expiry': 'Your password has expired', totp: 'Five-round identity verification', captcha: 'Human verification', paperwork: 'Application for dismissal', region: 'Regional snooze license', premium: 'Extended dismissal hours', banner: 'Your free dismissal control', ads: 'A message from our partners', queue: 'Dismissal authorization queue', maintenance: 'Scheduled maintenance', rate: 'Sign-out request pending', rating: 'Please rate our app', dlc: 'Peace & Quiet Expansion', accessibility: 'Accessibility verification', cancel: 'Cancellation assistance', reset: 'Account recovery', survey: 'Required service feedback',
 };
 
 export default function Home() {
@@ -50,7 +50,7 @@ export default function Home() {
   const [privacyEnd, setPrivacyEnd] = useState(false);
   const [online, setOnline] = useState(true);
   const [dismissing, setDismissing] = useState(false);
-  const [captchaOffset, setCaptchaOffset] = useState({ x: 0, y: 0 });
+  const [captchaOrder, setCaptchaOrder] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8]);
   const [refusalPosition, setRefusalPosition] = useState<{ x: number; y: number } | null>(null);
   const refusalRef = useRef<HTMLButtonElement>(null);
   const afterSurvey = useRef<() => void>(() => {});
@@ -70,7 +70,7 @@ export default function Home() {
   function open(next: Gate) {
     setEditor(null); setRefusalPosition(null); setGate(next); setStep(0); setElapsed(0); setInput(''); setRound(0);
     if (next) encounter(next);
-    if (next === 'captcha') { setCaptcha(makeCaptcha()); setSelected([]); }
+    if (next === 'captcha') { setCaptcha(makeCaptcha()); setSelected([]); setCaptchaOrder([0, 1, 2, 3, 4, 5, 6, 7, 8]); }
     if (next === 'privacy') { setPrivacyY(0); setPrivacyEnd(false); }
     if (next === 'queue') setQueue(14892);
     if (next === 'totp') void refreshCode();
@@ -112,7 +112,12 @@ export default function Home() {
   useEffect(() => {
     if (gate !== 'captcha') return;
     const timer = setInterval(() => {
-      setCaptchaOffset({ x: Math.random() * 36 - 18, y: Math.random() * 30 - 15 });
+      setCaptchaOrder(order => {
+        const next = [...order], first = Math.floor(Math.random() * 9);
+        const second = (first + 1 + Math.floor(Math.random() * 8)) % 9;
+        [next[first], next[second]] = [next[second], next[first]];
+        return next;
+      });
       if (Math.random() < .3) { setCaptcha(makeCaptcha()); setSelected([]); }
     }, 1800);
     return () => clearInterval(timer);
@@ -148,7 +153,7 @@ export default function Home() {
         if (s.snoozeUntil && time >= s.snoozeUntil) next = { ...next, snoozeUntil: 0, expired: true };
         if (!s.activeId) {
           const alarm = s.alarms.find(a => a.enabled && a.nextAt <= time);
-          if (alarm) next = { ...next, activeId: alarm.id, debtAt: time, expired: true, attempts: 0, alarms: s.alarms.map(a => a.id === alarm.id ? { ...a, nextAt: nextAlarm(a.time, time) } : a), completed: { ...s.completed, 'dismiss-fake': false, ads: false, maintenance: false } };
+          if (alarm) next = { ...next, activeId: alarm.id, debtAt: time, expired: true, alarms: s.alarms.map(a => a.id === alarm.id ? { ...a, nextAt: nextAlarm(a.time, time) } : a), completed: { ...s.completed, 'dismiss-fake': false, ads: false, maintenance: false } };
         }
         return next;
       });
@@ -186,24 +191,19 @@ export default function Home() {
     setPage('alarms');
   }
   function silence() {
-    if (!online || state.lockedUntil > Date.now()) { open(!online ? 'drm' : 'rate'); return; }
+    if (!online) { open('drm'); return; }
     setDismissing(false);
-    stopAlarmSound(); update({ activeId: null, snoozeUntil: 0, debtAt: 0, attempts: 0, pendingSnooze: null });
+    stopAlarmSound(); update({ activeId: null, snoozeUntil: 0, debtAt: 0, pendingSnooze: null });
     setState(s => ({ ...s, xp: s.xp + 25 })); setGate(null); notify('Dismissal authorized. Your next scheduled alarm remains enabled.');
   }
   function dismiss() {
     if (!ringing) return;
     encounter('credit'); encounter('debt');
-    if (state.lockedUntil > Date.now()) { open('rate'); return; }
-    const attempts = state.attempts + 1;
-    update({ attempts, ...(attempts >= 6 ? { lockedUntil: Date.now() + 7 * 86400000 } : {}) });
-    if (attempts >= 6) { open('rate'); return; }
     if (!online) { open('drm'); return; }
     dailyThen(() => setDismissing(true));
   }
   function authorizeDismissal() {
     if (!online) { open('drm'); return; }
-    if (state.lockedUntil > Date.now()) { open('rate'); return; }
     if (state.expired) { open('password-expiry'); return; }
     if (state.verifiedDay !== day()) { open('device'); return; }
     if (!state.premium && !freeDismissal(new Date().getHours(), state.score)) { open('premium'); return; }
@@ -235,7 +235,7 @@ export default function Home() {
   }
   function pay() {
     if (!checkout || checkout.paid || paying.current) return;
-    if (checkout.kind === 'dismiss' && (!online || state.lockedUntil > Date.now())) { setCheckout(null); open(!online ? 'drm' : 'rate'); return; }
+    if (checkout.kind === 'dismiss' && !online) { setCheckout(null); open('drm'); return; }
     if (checkout.kind === 'dismiss' && !validGratuity(tip)) { notify('Gratuity rejected. The minimum service appreciation is 30%.'); return; }
     if (decline) { notify('PAY-402: The wallet declined this request. Select another payment method to retry.'); return; }
     paying.current = true;
@@ -278,6 +278,13 @@ export default function Home() {
     const blob = new Blob([JSON.stringify(state.receipts, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'wakeup-statement.json'; a.click(); URL.revokeObjectURL(url);
   }
+  function signOut() {
+    if (!state.lockedUntil) { update({ lockedUntil: Date.now() + 7 * 86400000 }); open('rate'); return; }
+    if (state.lockedUntil > Date.now()) { open('rate'); return; }
+    setInside(false); setLogin(0); setGate(null); setCheckout(null); setEditor(null); setDismissing(false);
+    update({ lockedUntil: 0 });
+  }
+  const stars = (value: number, rate: (n: number) => void) => <div className="star-rating" role="group" aria-label="Service rating">{[1, 2, 3, 4, 5].map(n => <button type="button" key={n} aria-label={`Rate ${n} ${n === 1 ? 'star' : 'stars'}`} aria-pressed={value === n} onClick={() => rate(n)}><Star size={32} fill={n <= value ? 'currentColor' : 'none'} /></button>)}</div>;
   function resetSession() {
     sessionVersion.current++; paying.current = false; paidSnooze.current = false;
     resume.current = () => {}; afterSurvey.current = () => {}; pendingSnooze.current = 'snooze';
@@ -286,7 +293,7 @@ export default function Home() {
     setPage('alarms'); setFast(false); setTools(false); setGate(null); setCheckout(null); setEditor(null);
     setInside(false); setLogin(0); setPassword(''); setEmail(''); setMessage(''); setInput(''); setCode('');
     setRound(0); setStep(0); setElapsed(0); setTip(0); setDecline(false); setCaptcha(null); setSelected([]);
-    setCaptchaFor('accessibility'); setCaptchaOffset({ x: 0, y: 0 }); setRefusalPosition(null);
+    setCaptchaFor('accessibility'); setCaptchaOrder([0, 1, 2, 3, 4, 5, 6, 7, 8]); setRefusalPosition(null);
     setPrivacyY(0); setPrivacyEnd(false); setQueue(14892); setNow(Date.now());
   }
   function showFeature(id: string) {
@@ -326,13 +333,13 @@ export default function Home() {
       case 'ads': return <><div className="sponsored ad-creative"><span>WAKEUP BUSINESS PLATINUM · SPONSORED</span><AlarmClock size={64} /><h3>Own your morning.</h3><p>Lease the silence.</p><strong>$29.99 <small>/ month</small></strong><div className="loader"><div style={{ width: `${Math.min(100, elapsed / 30 * 100)}%` }} /></div></div><p>Advertisement · {Math.max(0, 30 - elapsed)} seconds remaining</p>{button('Continue', () => { complete('ads'); setGate(null); }, elapsed < 30)}</>;
       case 'queue': return <><div className="queue-number">{queue.toLocaleString()}</div><p>requests ahead of yours. Your position updates automatically.</p>{button('Buy priority placement', () => purchase('priority'), !!state.completed.priority)} {button('Continue to dismissal checkout', () => purchase('dismiss'), queue > 0)}<p>Need statutory clearance instead? {button('Apply for WAKE-1040', () => { setCaptchaFor('paperwork'); open('captcha'); }, false, true)}</p></>;
       case 'maintenance': return <><p>WAC-MNT-902 · Dismissal Authorization Service is undergoing scheduled maintenance. Essential alarm playback continues.</p><div className="detail">Next service window <strong>{new Date(state.maintenanceUntil).toLocaleTimeString()}</strong></div>{button('Retry authorization', () => { complete('maintenance'); update({ maintenanceUntil: 0 }); setGate(null); }, now < state.maintenanceUntil && !fast)}</>;
-      case 'rate': return <><div className="error-code">429</div><p>Six requests exceeded your dismissal allowance. Access resumes {new Date(state.lockedUntil).toLocaleString()}. Billing and other workspace functions remain available.</p></>;
+      case 'rate': return <><div className="error-code">429</div><p>Your sign-out request is pending the mandatory seven-day account retention period. You may sign out after {new Date(state.lockedUntil).toLocaleString()}. Alarm controls remain available.</p>{button('Complete sign out', signOut, now < state.lockedUntil)}{fast && button('Presenter: release sign-out hold', () => update({ lockedUntil: Date.now() - 1 }))}</>;
       case 'region': return <><div className="detail">Licensed region <strong>{state.region}</strong></div><p>REG-451: Standard snoozing is restricted in JO and GB under the Regional Wakefulness Distribution Schedule. An exception may be issued for this transaction.</p>{button('Purchase one-time snooze exception', () => purchase(pendingSnooze.current))}</>;
-      case 'rating': return <><p>Your purchased snooze is pending. Complete your review before the countdown begins.</p><div className="actions">{[1, 2, 3, 4, 5].map(n => <button className="button secondary" key={n} onClick={() => n === 5 ? activateSnooze() : notify('Ratings below five stars are currently incompatible with our business model.')}>{n} ★</button>)}</div></>;
+      case 'rating': return <><p>Your purchased snooze is pending. Complete your review before the countdown begins.</p>{stars(Number(input), n => { setInput(String(n)); if (n === 5) activateSnooze(); else notify('Ratings below five stars cannot be accepted. Please select five stars.'); })}</>;
       case 'dlc': return <><p>Mute is licensed separately from dismissal. This purchase permanently unlocks the mute control in this browser.</p><div className="subscription"><h3>Peace & Quiet</h3><strong>$49.99 / device</strong></div>{button('Buy expansion', () => purchase('dlc'))}</>;
       case 'accessibility': return <><p>Accessibility requests require verification. Our identity service protects all human requests.</p>{button('Begin verification', () => { setCaptchaFor('accessibility'); open('captcha'); })}</>;
-      case 'captcha': return captcha && <><p>{captcha.prompt}</p><div className="captcha-grid" style={{ transform: `translate(${captchaOffset.x}px, ${captchaOffset.y}px)` }}>{captcha.tiles.map((tile, i) => <button type="button" key={i} aria-label={`Tile ${i + 1}: ${tile}`} aria-pressed={selected.includes(i)} className={selected.includes(i) ? 'chosen' : ''} onClick={() => setSelected(s => s.includes(i) ? s.filter(v => v !== i) : [...s, i])}>{tile}</button>)}</div><p>{round} of 3 rounds confirmed</p>{button('Verify selection', () => { const valid = selected.length === captcha.correct.length && selected.every(v => captcha.correct.includes(v)); setCaptcha(makeCaptcha()); setSelected([]); if (!valid) { setRound(0); notify('Selection rejected. A fresh challenge has been issued.'); } else if (round < 2) { setRound(r => r + 1); notify('Human status provisionally acknowledged. Continue verification.'); } else { complete('captcha'); if (captchaFor === 'accessibility') { update({ accessibility: true }); complete('accessibility'); setGate(null); } else open('paperwork'); } })}</>;
-      case 'survey': return <><p>Before we finish processing your form, rate the efficiency of this interaction.</p><label className="field">Service rating<select aria-label="Service rating" value={input} onChange={e => setInput(e.target.value)}><option value="">Select a rating</option>{[1,2,3,4,5].map(n => <option key={n} value={n}>{n} / 5</option>)}</select></label>{button('Submit required feedback', () => { update({ pendingSurvey: false }); complete('survey'); setGate(null); const next = afterSurvey.current; afterSurvey.current = () => {}; next(); }, !input)}</>;
+      case 'captcha': return captcha && <><p>{captcha.prompt}</p><div className="captcha-grid">{captchaOrder.map(i => <button type="button" key={i} aria-label={`Tile ${i + 1}: ${captcha.tiles[i]}`} aria-pressed={selected.includes(i)} className={selected.includes(i) ? 'chosen' : ''} onClick={() => setSelected(s => s.includes(i) ? s.filter(v => v !== i) : [...s, i])}>{captcha.tiles[i]}</button>)}</div><p>{round} of 3 rounds confirmed</p>{button('Verify selection', () => { const valid = selected.length === captcha.correct.length && selected.every(v => captcha.correct.includes(v)); setCaptcha(makeCaptcha()); setSelected([]); if (!valid) { setRound(0); notify('Selection rejected. A fresh challenge has been issued.'); } else if (round < 2) { setRound(r => r + 1); notify('Human status provisionally acknowledged. Continue verification.'); } else { complete('captcha'); if (captchaFor === 'accessibility') { update({ accessibility: true }); complete('accessibility'); setGate(null); } else open('paperwork'); } })}</>;
+      case 'survey': return <><p>Before we finish processing your form, rate the efficiency of this interaction.</p>{stars(Number(input), n => { setInput(String(n)); if (n < 5) notify('Ratings below five stars cannot be accepted. Please select five stars.'); })}{button('Submit required feedback', () => { if (input !== '5') return; update({ pendingSurvey: false }); complete('survey'); setGate(null); const next = afterSurvey.current; afterSurvey.current = () => {}; next(); }, input !== '5')}</>;
       case 'paperwork': return state.paperwork ? <><p>Application {state.paperwork.reference} has been received.</p><div className="detail">Expected determination <strong>{new Date(state.paperwork.due).toLocaleDateString()}</strong></div>{button('Use approved determination', () => { setDismissing(true); setGate(null); }, now < state.paperwork.due)}{fast && button('Presenter: approve now', () => update({ paperwork: { ...state.paperwork!, due: Date.now() } }))}</> : <form onSubmit={e => { e.preventDefault(); if (!validApplication(input)) { notify('Your statement must contain exactly 500 words.'); return; } update({ paperwork: { reference: `WAKE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, due: businessDue(3 + Math.floor(Math.random() * 3)) } }); complete('paperwork'); afterForm(() => open('paperwork')); }}><span className="eyebrow">FORM WAKE-1040 · AUDIBLE TERMINATION REQUEST</span><label className="field">Applicant name<input required defaultValue="Jordan Miller" /></label><label className="field">Statement of necessity<textarea required value={input} onChange={e => setInput(e.target.value)} /></label><p aria-live="polite">{wordCount(input)} / 500 words · exactly 500 required</p><label className="consent"><input type="checkbox" required /> I declare that I intend to stop this alarm.</label><p>Processing takes 3–5 business days, excluding weekends. Submit a statement of exactly 500 words.</p><button className="button" type="submit" disabled={!validApplication(input)}>Submit application</button></form>;
       case 'cancel': { const hour = new Date().getHours(); const available = hour >= 22 || hour < 6 || fast; return <><p>Customer retention accepts cancellation calls during your sleeping hours: 22:00–06:00 local time. Calls are monitored for retention compliance.</p><div className="detail">Agent status <strong>{available ? 'Accepting sleepy callers' : 'Closed until 22:00'}</strong></div>{step === 0 ? button('Connect to retention agent', () => setStep(1), !available || !state.premium) : step === 1 ? <><p>Agent: Before I cancel, explain why wakefulness no longer meets your needs.</p><label className="field">Cancellation reason<textarea value={input} onChange={e => setInput(e.target.value)} /></label>{button('Submit reason', () => afterForm(() => { open('cancel'); setStep(2); }), input.trim().length < 5)}</> : <><p>Agent: We can offer the same plan at the same price. Would you reconsider?</p>{button('Decline offer and cancel', () => { update({ premium: false }); complete('cancel'); setGate(null); notify('Premium canceled. Office-hours dismissal restored.'); })} {button('Keep Premium', () => setGate(null), false, true)}</>}</>; }
       case 'reset': return <><p>Your recovery link is available below.</p><div className="reset-url">/reset?token=RECOVERY-PENDING</div>{button('Open reset link', () => notify(inside ? 'Recovery authorized for Jordan Miller. Your account is restored.' : '401: Sign in before resetting the password you need to sign in.'))}</>;
@@ -346,7 +353,7 @@ export default function Home() {
   const notice = message && <div className="notice" role="status"><span>{message}</span><button aria-label="Dismiss notification" onClick={() => setMessage('')}><X size={16} /></button></div>;
   if (!inside) return <div className="auth-shell"><header className="auth-header"><div className="wordmark"><span className="mark"><AlarmClock size={20} /></span>WakeUp <span className="wordmark-light">Enterprise</span></div><span className="auth-system">Identity services</span></header><main className="auth-main"><section className="auth-card"><span className="eyebrow">WAKEUP IDENTITY SERVICES</span><h1>{['Create your account', 'Sign in to WakeUp', 'Create your account again', 'Account located'][login]}</h1>{login === 3 ? <><p>Your password belongs to jordan.miller@wakeup.example, an existing account. We have assigned it to you.</p>{button('Go to workspace', () => { setInside(true); setPassword(''); encounter('account'); if (state.pendingSurvey) { open('survey'); } else if (state.pendingSnooze) { pendingSnooze.current = state.pendingSnooze; paidSnooze.current = true; open('rating'); } else if (!state.completed.startup) open('startup'); })}</> : <form onSubmit={e => { e.preventDefault(); setLogin(n => n + 1); encounter('account'); notify(['An account already exists with that email. Sign in instead.', 'No account exists with that email. Register again.', 'That password belongs to Jordan Miller. We located your account.'][login]); afterForm(() => {}); }}><p className="muted">Manage your schedule and continued eligibility for sleep.</p><label className="field">Email<input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" /></label><label className="field">Password<input type="password" required minLength={3} value={password} onChange={e => setPassword(e.target.value)} /></label><button type="submit" className="button full">{login === 1 ? 'Sign in' : 'Continue'}</button><div className="auth-switch"><button type="button" onClick={() => open('reset')}>Forgot password?</button></div></form>}</section><p className="auth-legal">WakeUp Enterprise · Keep the browser open and device awake for alarms.</p></main>{modal}{notice}</div>;
 
-  return <div className={`shell${state.accessibility ? ' accessible' : ''}`}><aside className="sidebar"><div className="brand"><span className="mark"><AlarmClock size={19} /></span><div>WakeUp <small>ENTERPRISE</small></div></div><div className="sidebar-heading">WORKSPACE</div><nav>{nav.map(item => <button key={item.key} className={`nav-link ${page === item.key ? 'is-active' : ''}`} onClick={() => { setPage(item.key); setMessage(''); if (item.key === 'rewards') encounter('battlepass'); if (item.key === 'billing') { encounter('debt'); encounter('credit'); } }}><item.icon size={17} />{item.label}</button>)}</nav><div className="sidebar-end"><div className="profile"><span className="avatar">JM</span><div><strong>Jordan Miller</strong><small>{state.premium ? 'Premium' : 'Free'} workspace</small></div></div><button className="signout" onClick={() => { setInside(false); setLogin(0); setGate(null); setCheckout(null); setEditor(null); }}><LogOut size={15} />Sign out</button></div></aside><main className="workspace"><header className="topbar"><span>Workspace / {nav.find(p => p.key === page)?.label}</span><span className="pill">WakeUp Enterprise</span></header><div className="content"><div className="heading"><div><span className="eyebrow">WORKSPACE SERVICES</span><h1>{nav.find(p => p.key === page)?.label}</h1><p className="muted">{page === 'alarms' ? 'Manage your wake-up schedule and associated services.' : 'WakeUp Enterprise · Device account'}</p></div>{page === 'alarms' && button('New alarm', () => { void enableAudio(); dailyThen(() => setEditor({ id: crypto.randomUUID(), time: '06:00', enabled: true, nextAt: 0 })); })}</div>
+  return <div className={`shell${state.accessibility ? ' accessible' : ''}`}><aside className="sidebar"><div className="brand"><span className="mark"><AlarmClock size={19} /></span><div>WakeUp <small>ENTERPRISE</small></div></div><div className="sidebar-heading">WORKSPACE</div><nav>{nav.map(item => <button key={item.key} className={`nav-link ${page === item.key ? 'is-active' : ''}`} onClick={() => { setPage(item.key); setMessage(''); if (item.key === 'rewards') encounter('battlepass'); if (item.key === 'billing') { encounter('debt'); encounter('credit'); } }}><item.icon size={17} />{item.label}</button>)}</nav><div className="sidebar-end"><div className="profile"><span className="avatar">JM</span><div><strong>Jordan Miller</strong><small>{state.premium ? 'Premium' : 'Free'} workspace</small></div></div><button className="signout" onClick={signOut}><LogOut size={15} />Sign out</button></div></aside><main className="workspace"><header className="topbar"><span>Workspace / {nav.find(p => p.key === page)?.label}</span><span className="pill">WakeUp Enterprise</span></header><div className="content"><div className="heading"><div><span className="eyebrow">WORKSPACE SERVICES</span><h1>{nav.find(p => p.key === page)?.label}</h1><p className="muted">{page === 'alarms' ? 'Manage your wake-up schedule and associated services.' : 'WakeUp Enterprise · Device account'}</p></div>{page === 'alarms' && button('New alarm', () => { void enableAudio(); dailyThen(() => setEditor({ id: crypto.randomUUID(), time: '06:00', enabled: true, nextAt: 0 })); })}</div>
     {page === 'alarms' && <>
       {state.activeId && <div className="ring-banner"><div><span>{ringing ? 'ACTIVE ALARM' : 'SNOOZE ACTIVE'}</span><h2>{ringing ? 'Your alarm is ringing' : `${Math.max(0, Math.ceil((state.snoozeUntil - now) / 1000))} seconds remaining`}</h2><p>Sleep debt continues to accrue.</p></div>{ringing && <div className="actions">{button('Dismiss', dismiss)}{button('Snooze', () => snooze('snooze'), false, true)}</div>}</div>}
       {!audio && <div className="section-card slim"><p>Enable sound after opening this browser. Keep the browser open and your device awake.</p>{button('Enable sound', () => void enableAudio())}</div>}
