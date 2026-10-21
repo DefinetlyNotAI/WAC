@@ -10,6 +10,7 @@ export type SavedState = {
   region: string; updated: boolean; drmUntil: number; maintenanceUntil: number;
   paperwork: { reference: string; due: number } | null; device: string;
   pendingSnooze: 'snooze' | 'loot' | null;
+  pendingSurvey: boolean;
 };
 export const initialState: SavedState = {
   alarms: [], activeId: null, snoozeUntil: 0, score: 650, xp: 0, debt: 0, debtAt: 0,
@@ -18,6 +19,7 @@ export const initialState: SavedState = {
   accessibility: false, expired: false, verifiedDay: '', attempts: 0, lockedUntil: 0,
   region: '', updated: false, drmUntil: 0, maintenanceUntil: 0, paperwork: null, device: '',
   pendingSnooze: null,
+  pendingSurvey: false,
 };
 export const STORAGE_KEY = 'wakeup-enterprise-local-v2';
 export function readState(): SavedState {
@@ -40,4 +42,11 @@ export function readState(): SavedState {
 }
 export function writeState(state: SavedState): boolean {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); return true; } catch { return false; }
+}
+export function resetState(): SavedState {
+  const fresh = { ...initialState, alarms: [], receipts: [], encounters: {}, completed: {}, device: crypto.randomUUID(), region: navigator.language.split('-')[1] || 'US' };
+  localStorage.removeItem('wakeup-enterprise-local-v1');
+  sessionStorage.removeItem('wac-session-features');
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  return fresh;
 }

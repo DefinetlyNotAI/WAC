@@ -34,7 +34,7 @@ export const features: Feature[] = [
   {id:'privacy',title:'Privacy Policy Torture',category:'Bureaucracy',description:'Read at one pixel per second.'},
   {id:'fake-dismiss',title:'Deceptive Dismiss Button',category:'Hostile UX',description:'Dismiss secretly means remind me tomorrow.'},
   {id:'volume',title:'Reversed Volume Controls',category:'Hostile UX',description:'Volume down makes it louder.'},
-  {id:'survey',title:'Mandatory Surveys (disabled)',category:'Hostile UX',description:'Automatic interaction surveys are disabled; contextual survey support is reserved.'},
+  {id:'survey',title:'Mandatory Surveys',category:'Hostile UX',description:'Required feedback follows completed forms.'},
   {id:'accessibility',title:'Inaccessible Accessibility',category:'Hostile UX',description:'Accessibility settings are protected by CAPTCHA.'},
   {id:'banner',title:'Premium Banner Obstruction',category:'Hostile UX',description:'A Premium banner covers free dismissal.'},
   {id:'rating',title:'Unskippable Rating Screen',category:'Hostile UX',description:'Rate us before snoozing.'}

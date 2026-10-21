@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { accrueDebt, businessDue, freeDismissal, invoice, makeCaptcha, nextAlarm, snoozePrice } from './rules.ts';
+import { accrueDebt, businessDue, freeDismissal, invoice, makeCaptcha, nextAlarm, snoozePrice, validApplication, validGratuity, wordCount } from './rules.ts';
+import { resetState, STORAGE_KEY } from './storage.ts';
 import { totp } from './totp.ts';
 
 test('snooze doubles and applies consistent credit adjustments', () => {
@@ -45,4 +46,35 @@ test('random CAPTCHA answers match the generated tiles', () => {
 });
 test('local TOTP matches RFC 6238 six-digit vector', async () => {
   assert.equal(await totp('12345678901234567890', 59000), '287082');
+});
+test('applications require exactly 500 words', () => {
+  assert.equal(wordCount('  one\n two\tthree  '), 3);
+  assert.equal(validApplication('word '.repeat(499)), false);
+  assert.equal(validApplication('word '.repeat(500)), true);
+  assert.equal(validApplication('word '.repeat(501)), false);
+});
+test('dismissal gratuities below thirty percent are refused', () => {
+  for (const percent of [0, 20, 25, 29]) assert.equal(validGratuity(percent), false);
+  assert.equal(validGratuity(30), true);
+});
+test('workspace reset clears legacy progress and preserves unrelated browser data', () => {
+  const keys = new Map([['wakeup-enterprise-local-v1', '{"premium":true}'], ['unrelated', 'keep']]);
+  const session = new Map([['wac-session-features', '{"totp":true}']]);
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const originalSession = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  const storage = (map: Map<string, string>) => ({ removeItem: (key: string) => map.delete(key), setItem: (key: string, value: string) => map.set(key, value) });
+  Object.defineProperty(globalThis, 'localStorage', { value: storage(keys), configurable: true });
+  Object.defineProperty(globalThis, 'sessionStorage', { value: storage(session), configurable: true });
+  try {
+    const fresh = resetState();
+    assert.equal(fresh.premium, false); assert.equal(fresh.pendingSurvey, false);
+    assert.deepEqual(fresh.alarms, []); assert.equal(fresh.lockedUntil, 0);
+    assert.equal(keys.has('wakeup-enterprise-local-v1'), false);
+    assert.equal(session.has('wac-session-features'), false);
+    assert.equal(keys.get('unrelated'), 'keep');
+    assert.deepEqual(JSON.parse(keys.get(STORAGE_KEY)!), fresh);
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'localStorage', original); else Reflect.deleteProperty(globalThis, 'localStorage');
+    if (originalSession) Object.defineProperty(globalThis, 'sessionStorage', originalSession); else Reflect.deleteProperty(globalThis, 'sessionStorage');
+  }
 });

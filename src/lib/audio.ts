@@ -2,6 +2,7 @@ let context: AudioContext | null = null;
 let interval: ReturnType<typeof setInterval> | null = null;
 let output: GainNode | null = null;
 let currentSound: 'standard' | 'chime' = 'standard';
+let generation = 0;
 export async function armAudio() {
   context ??= new AudioContext();
   await context.resume();
@@ -9,7 +10,9 @@ export async function armAudio() {
 }
 export function setAlarmVolume(volume: number) { if (output) output.gain.value = Math.max(0, Math.min(100, volume)) / 700; }
 export async function startAlarmSound(volume = 45, sound: 'standard' | 'chime' = 'standard') {
+  const requestedGeneration = generation;
   if (!await armAudio() || !context) throw new Error('Audio needs a user gesture');
+  if (requestedGeneration !== generation) return;
   currentSound = sound;
   if (!output) { output = context.createGain(); output.connect(context.destination); }
   setAlarmVolume(volume);
@@ -26,6 +29,7 @@ export async function startAlarmSound(volume = 45, sound: 'standard' | 'chime' =
   beep(); interval = setInterval(beep, 650);
 }
 export function stopAlarmSound() {
+  generation++;
   if (interval) clearInterval(interval);
   interval = null;
   if (output) output.gain.value = 0;

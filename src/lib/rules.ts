@@ -1,4 +1,7 @@
 export const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+export const wordCount = (text: string) => text.trim().split(/\s+/u).filter(Boolean).length;
+export const validApplication = (text: string) => wordCount(text) === 500;
+export const validGratuity = (percent: number) => percent >= 30;
 export function nextAlarm(time: string, now = Date.now()): number {
   const [hours, minutes] = time.split(':').map(Number);
   const next = new Date(now); next.setHours(hours, minutes, 0, 0);
@@ -30,12 +33,12 @@ export function makeCaptcha() {
     const a = 2 + Math.floor(Math.random() * 18), b = 1 + Math.floor(Math.random() * 12);
     const answer = a + b, correct = Math.floor(Math.random() * 9);
     const tiles = Array.from({ length: 9 }, (_, i) => String(i === correct ? answer : answer + i - correct));
-    return { prompt: `Select the result of ${a} + ${b}.`, tiles, correct: [correct] };
+    return { prompt: `Select ${a} + ${b}. Calculators must also prove they are human.`, tiles, correct: [correct] };
   }
   const icons = ['🚦', '🚲', '🚌', '🌳', '🏠', '🚕'];
   const names = ['traffic lights', 'bicycles', 'buses', 'trees', 'houses', 'taxis'];
   const target = Math.floor(Math.random() * icons.length);
   const tiles = Array.from({ length: 9 }, () => Math.floor(Math.random() * icons.length));
   tiles[Math.floor(Math.random() * 9)] = target;
-  return { prompt: Math.random() < .5 ? `Select all objects matching ${icons[target]}.` : `Select all ${names[target]}.`, tiles: tiles.map(i => icons[i]), correct: tiles.flatMap((v, i) => v === target ? [i] : []) };
+  return { prompt: Math.random() < .5 ? `Select every ${icons[target]}. Ignore any objects pretending to be one.` : `Select all ${names[target]}. Our contractor has misplaced the road again.`, tiles: tiles.map(i => icons[i]), correct: tiles.flatMap((v, i) => v === target ? [i] : []) };
 }
