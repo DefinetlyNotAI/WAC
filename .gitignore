@@ -5,5 +5,5 @@ out
 .env*
 !.env.example
 .DS_Store
-
+.idea/
 next-env.d.ts
