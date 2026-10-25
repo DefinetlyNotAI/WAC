@@ -2,9 +2,10 @@
 import type { useAlarmController } from './use-alarm-controller.tsx';
 import { stopAlarmSound } from '@/lib/audio.ts';
 import { features } from '@/lib/features.ts';
+import { button } from './ui-controls';
 
 export function PresenterPanel({app}: {app: ReturnType<typeof useAlarmController>}) {
-    const { state, setGate, fast, setFast, tools, setTools, update, trigger, resetSession, showFeature, button } = app;
+    const { state, setGate, fast, setFast, tools, setTools, update, trigger, resetSession, showFeature } = app;
     return <>
         {tools && <div className="overlay developer-layer">
             <section className="dialog developer-dialog" role="dialog" aria-modal="true"

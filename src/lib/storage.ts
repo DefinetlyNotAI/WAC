@@ -1,3 +1,4 @@
+import { isValidAlarmTime, nextAlarm } from './rules';
 
 /* Types */
 
@@ -23,6 +24,7 @@ export type Receipt = {
     lines: ReceiptLine[];
     total: number;
     at: number;
+    paymentMethod?: string;
 };
 
 export type Paperwork = {
@@ -63,18 +65,6 @@ export type SavedState = {
     device: string;
     pendingSnooze: PendingSnooze;
     pendingSurvey: boolean;
-};
-
-type LegacyState = {
-    alarmTime?: string;
-    alarmEnabled?: boolean;
-    score?: number;
-    xp?: number;
-    balance?: number;
-    debt?: number;
-    premium?: boolean;
-    volume?: number;
-    snoozes?: number;
 };
 
 /* Constants */
@@ -155,56 +145,119 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         && !Array.isArray(value);
 }
 
-function isValidSavedState(value: unknown): value is SavedState {
-    if (!isRecord(value)) return false;
-
-    return Array.isArray(value.alarms)
-        && Array.isArray(value.receipts)
-        && typeof value.balance === 'number'
-        && Number.isFinite(value.balance);
+function validNumber(value: unknown, fallback: number): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-function getNextAlarmTime(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    const scheduled = new Date();
+function validBoolean(value: unknown, fallback: boolean): boolean {
+    return typeof value === 'boolean' ? value : fallback;
+}
 
-    scheduled.setHours(hours, minutes, 0, 0);
+function validString(value: unknown, fallback: string): string {
+    return typeof value === 'string' ? value : fallback;
+}
 
-    if (scheduled.getTime() <= Date.now()) {
-        scheduled.setDate(scheduled.getDate() + 1);
+function validateAlarm(value: unknown): value is Alarm {
+    return isRecord(value) && typeof value.id === 'string' && typeof value.time === 'string' && isValidAlarmTime(value.time)
+        && typeof value.enabled === 'boolean' && typeof value.nextAt === 'number'
+        && Number.isFinite(value.nextAt);
+}
+
+function validateReceipt(value: unknown): value is Receipt {
+    return isRecord(value) && typeof value.id === 'string' && typeof value.title === 'string'
+        && typeof value.total === 'number' && Number.isFinite(value.total)
+        && typeof value.at === 'number' && Number.isFinite(value.at)
+        && Array.isArray(value.lines) && value.lines.every((line: unknown) => isRecord(line)
+            && typeof line.label === 'string' && typeof line.cents === 'number' && Number.isFinite(line.cents))
+        && (value.paymentMethod === undefined || typeof value.paymentMethod === 'string');
+}
+
+function validNumberMap(value: unknown): Record<string, number> {
+    if (!isRecord(value)) return {};
+    const result: Record<string, number> = {};
+    for (const [key, entry] of Object.entries(value)) {
+        if (typeof entry === 'number' && Number.isFinite(entry)) result[key] = entry;
     }
+    return result;
+}
 
-    return scheduled.getTime();
+function validBooleanMap(value: unknown): Record<string, boolean> {
+    if (!isRecord(value)) return {};
+    const result: Record<string, boolean> = {};
+    for (const [key, entry] of Object.entries(value)) {
+        if (typeof entry === 'boolean') result[key] = entry;
+    }
+    return result;
+}
+
+/** Sanitize each persisted field instead of trusting a partially checked JSON object. */
+function sanitizeSavedState(value: unknown, base: SavedState): SavedState {
+    if (!isRecord(value)) return base;
+    return {
+        alarms: Array.isArray(value.alarms) ? value.alarms.filter(validateAlarm) : base.alarms,
+        activeId: typeof value.activeId === 'string' || value.activeId === null ? value.activeId : base.activeId,
+        snoozeUntil: validNumber(value.snoozeUntil, base.snoozeUntil),
+        score: validNumber(value.score, base.score),
+        xp: validNumber(value.xp, base.xp),
+        debt: validNumber(value.debt, base.debt),
+        debtAt: validNumber(value.debtAt, base.debtAt),
+        balance: validNumber(value.balance, base.balance),
+        snoozes: validNumber(value.snoozes, base.snoozes),
+        volume: Math.max(0, Math.min(100, validNumber(value.volume, base.volume))),
+        premium: validBoolean(value.premium, base.premium),
+        dlc: validBoolean(value.dlc, base.dlc),
+        sound: value.sound === 'chime' ? 'chime' : 'standard',
+        receipts: Array.isArray(value.receipts) ? value.receipts.filter(validateReceipt) : base.receipts,
+        encounters: validNumberMap(value.encounters),
+        completed: validBooleanMap(value.completed),
+        daily: validString(value.daily, base.daily),
+        rewardDay: validString(value.rewardDay, base.rewardDay),
+        cookies: typeof value.cookies === 'boolean' || value.cookies === null ? value.cookies : base.cookies,
+        accessibility: validBoolean(value.accessibility, base.accessibility),
+        expired: validBoolean(value.expired, base.expired),
+        verifiedDay: validString(value.verifiedDay, base.verifiedDay),
+        attempts: validNumber(value.attempts, base.attempts),
+        lockedUntil: validNumber(value.lockedUntil, base.lockedUntil),
+        region: validString(value.region, base.region),
+        updated: validBoolean(value.updated, base.updated),
+        drmUntil: validNumber(value.drmUntil, base.drmUntil),
+        maintenanceUntil: validNumber(value.maintenanceUntil, base.maintenanceUntil),
+        paperwork: isRecord(value.paperwork) && typeof value.paperwork.reference === 'string'
+            && typeof value.paperwork.due === 'number' && Number.isFinite(value.paperwork.due)
+            ? {reference: value.paperwork.reference, due: value.paperwork.due} : null,
+        device: validString(value.device, base.device),
+        pendingSnooze: value.pendingSnooze === 'snooze' || value.pendingSnooze === 'loot' ? value.pendingSnooze : null,
+        pendingSurvey: validBoolean(value.pendingSurvey, base.pendingSurvey)
+    };
 }
 
 /* Legacy Migration */
 
 function migrateLegacyState(
-    legacy: LegacyState,
+    legacy: Record<string, unknown>,
     base: SavedState,
 ): SavedState {
-    const time = legacy.alarmTime || DEFAULT_ALARM_TIME;
+    const time = typeof legacy.alarmTime === 'string' && isValidAlarmTime(legacy.alarmTime)
+        ? legacy.alarmTime : DEFAULT_ALARM_TIME;
 
-    const alarms: Alarm[] = legacy.alarmEnabled
+    const alarms: Alarm[] = legacy.alarmEnabled === true
         ? [{
             id: crypto.randomUUID(),
             time,
             enabled: true,
-            nextAt: getNextAlarmTime(time),
+            nextAt: nextAlarm(time),
         }]
         : [];
 
     return {
         ...base,
-        score: legacy.score ?? base.score,
-        xp: legacy.xp ?? base.xp,
-        balance: Math.round(
-            (legacy.balance ?? 25) * CENTS_PER_DOLLAR
-        ),
-        debt: (legacy.debt ?? 0) * CENTS_PER_DOLLAR,
-        premium: Boolean(legacy.premium),
-        volume: legacy.volume ?? base.volume,
-        snoozes: legacy.snoozes ?? base.snoozes,
+        score: validNumber(legacy.score, base.score),
+        xp: validNumber(legacy.xp, base.xp),
+        balance: Math.round(validNumber(legacy.balance, 25) * CENTS_PER_DOLLAR),
+        debt: validNumber(legacy.debt, 0) * CENTS_PER_DOLLAR,
+        premium: legacy.premium === true,
+        volume: validNumber(legacy.volume, base.volume),
+        snoozes: validNumber(legacy.snoozes, base.snoozes),
         alarms,
     };
 }
@@ -215,7 +268,7 @@ function readLegacyState(base: SavedState): SavedState {
 
     if (!isRecord(legacy)) return base;
 
-    return migrateLegacyState(legacy as LegacyState, base);
+    return sanitizeSavedState(migrateLegacyState(legacy, base), base);
 }
 
 /* Storage Operations */
@@ -230,14 +283,7 @@ export function readState(): SavedState {
 
         const saved = parseStoredState(raw);
 
-        if (!isValidSavedState(saved)) {
-            return createInitialState();
-        }
-
-        return {
-            ...createInitialState(),
-            ...saved,
-        };
+        return sanitizeSavedState(saved, createInitialState());
     } catch {
         return createInitialState();
     }
@@ -260,16 +306,9 @@ export function writeState(state: SavedState): boolean {
 export function resetState(): SavedState {
     const fresh = createInitialState();
 
-    try {
-        localStorage.removeItem(LEGACY_STORAGE_KEY);
-        sessionStorage.removeItem(SESSION_FEATURES_KEY);
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(fresh),
-        );
-    } catch {
-        // Return the fresh state even if storage is unavailable.
-    }
-
+    // A reset is successful only when the fresh state has actually been persisted.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    sessionStorage.removeItem(SESSION_FEATURES_KEY);
     return fresh;
 }

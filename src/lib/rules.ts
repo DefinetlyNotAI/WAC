@@ -145,10 +145,16 @@ export function validGratuity(percent: number): boolean {
 
 /* Alarm Scheduling */
 
+export function isValidAlarmTime(time: string): boolean {
+    const match = /^(\d{2}):(\d{2})$/.exec(time);
+    return !!match && Number(match[1]) < 24 && Number(match[2]) < 60;
+}
+
 export function nextAlarm(
     time: string,
     now = Date.now(),
 ): number {
+    if (!isValidAlarmTime(time)) throw new Error('Invalid alarm time');
     const [hours, minutes] = time.split(':').map(Number);
     const next = new Date(now);
 

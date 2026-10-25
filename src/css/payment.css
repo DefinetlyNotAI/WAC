@@ -1,0 +1,13 @@
+.demo-card-form { display: grid; gap: 14px; margin-top: 16px; }
+.demo-card-form .field { min-width: 0; }
+.demo-card-form .field input { width: 100%; box-sizing: border-box; }
+.demo-card-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.demo-card-heading, .checkout-success { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.demo-card-heading strong { display: inline-flex; align-items: center; gap: 7px; }
+.demo-card-heading span { font-size: 11px; letter-spacing: .06em; opacity: .65; }
+.demo-card-examples { padding: 12px; border: 1px solid currentColor; border-radius: 6px; font-size: 12px; opacity: .8; overflow-wrap: anywhere; }
+.demo-card-examples p { margin: 6px 0 0; }
+.payment-error { font-size: 13px; color: #c23434; margin: 0; }
+.checkout-success { justify-content: flex-start; padding: 14px 0; }
+.checkout-success p { margin: 4px 0 0; }
+@media (max-width: 500px) { .demo-card-grid { grid-template-columns: 1fr; } }

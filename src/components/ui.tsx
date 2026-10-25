@@ -1,8 +1,10 @@
+'use client';
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { AlarmClock, LogOut } from 'lucide-react';
 import { nav, titles } from '@/app/config.ts';
 import type { Gate, Page } from '@/app/page.types';
+import { useModalFocus } from '@/hooks/use-modal-focus';
 
 export function Notice({ message, dismiss }: { message: string; dismiss: () => void }) {
     if (!message) return null;
@@ -18,8 +20,9 @@ export function Dialog({ gate, content, close, canClose, canReturn }: {
     canClose: boolean;
     canReturn: boolean;
 }) {
+    const dialogRef = useModalFocus(canClose, close);
     return <div className="overlay">
-        <section className="dialog" role="dialog" aria-modal="true" aria-label={titles[gate]}>
+        <section ref={dialogRef} tabIndex={-1} className="dialog" role="dialog" aria-modal="true" aria-label={titles[gate]}>
             <header className="dialog-header">
                 <div><span className="eyebrow">WAKEUP ENTERPRISE · ACCOUNT SERVICES</span><h2>{titles[gate]}</h2></div>
                 {canClose && <button className="icon-button" aria-label="Close dialog" onClick={close}><X size={18}/></button>}

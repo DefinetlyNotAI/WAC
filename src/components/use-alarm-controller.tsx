@@ -1,12 +1,15 @@
 'use client';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { type Alarm, initialState, readState, resetState, type SavedState, writeState } from '@/lib/storage.ts';
-import { accrueDebt, freeDismissal, invoice, makeCaptcha, nextAlarm, snoozePrice, validGratuity } from '@/lib/rules.ts';
-import { armAudio, disposeAudio, setAlarmVolume, startAlarmSound, stopAlarmSound } from '@/lib/audio.ts';
+import { freeDismissal, isValidAlarmTime, makeCaptcha, nextAlarm } from '@/lib/rules';
+import { armAudio, startAlarmSound, stopAlarmSound } from '@/lib/audio';
 import { totp } from '@/lib/totp.ts';
-import type { Checkout, Gate, Page, Product } from '@/app/page.types.ts';
-import { day } from '@/app/config.ts';
+import type { Gate, Page } from '@/app/page.types';
+import { day, titles } from '@/app/config';
+import { useAlarmClock } from '@/hooks/use-alarm-clock';
+import { useAlarmPlayback } from '@/hooks/use-alarm-playback';
+import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useCheckout } from '@/hooks/use-checkout';
 
 export function useAlarmController() {
     const [state, setState] = useState<SavedState>(initialState);
@@ -30,14 +33,10 @@ export function useAlarmController() {
     const [selected, setSelected] = useState<number[]>([]);
     const [captchaFor, setCaptchaFor] = useState<'accessibility' | 'paperwork'>('accessibility');
     const [editor, setEditor] = useState<Alarm | null>(null);
-    const [checkout, setCheckout] = useState<Checkout | null>(null);
-    const [tip, setTip] = useState(0);
-    const [decline, setDecline] = useState(false);
     const [audio, setAudio] = useState(false);
     const [queue, setQueue] = useState(14892);
     const [privacyY, setPrivacyY] = useState(0);
     const [privacyEnd, setPrivacyEnd] = useState(false);
-    const [online, setOnline] = useState(true);
     const [dismissing, setDismissing] = useState(false);
     const [captchaOrder, setCaptchaOrder] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8]);
     const [refusalPosition, setRefusalPosition] = useState<{ x: number; y: number } | null>(null);
@@ -45,18 +44,23 @@ export function useAlarmController() {
     const afterSurvey = useRef<() => void>(() => {
     });
     const sessionVersion = useRef(0);
-    const networkRetry = useRef<() => Promise<void>>(async () => {
-    });
     const privacyRef = useRef<HTMLDivElement>(null);
     const resume = useRef<() => void>(() => {
     });
     const pendingSnooze = useRef<'snooze' | 'loot'>('snooze');
     const paidSnooze = useRef(false);
-    const paying = useRef(false);
     const level = Math.floor(state.xp / 100) + 1;
     const ringing = !!state.activeId && !state.snoozeUntil;
-    const update = (patch: Partial<SavedState>) => setState(s => ({...s, ...patch}));
+    const update = (patch: Partial<SavedState> | ((previous: SavedState) => Partial<SavedState>)) =>
+        setState(previous => ({ ...previous, ...(typeof patch === 'function' ? patch(previous) : patch) }));
     const notify = (text: string) => setMessage(text);
+    const { online, retryNetwork } = useNetworkStatus();
+    const { checkout, setCheckout, tip, setTip, purchase, pay, returnFromPayment, resetCheckout } = useCheckout({
+        state, setState, online, ringing, pendingSnooze, paidSnooze, encounter, open, update,
+        notify, silence, setGate
+    });
+    useAlarmClock(ready, setState, setNow);
+    useAlarmPlayback(ringing, audio, state.volume, state.sound, setAudio);
 
     function encounter(id: string) {
         setState(s => ({...s, encounters: {...s.encounters, [id]: (s.encounters[id] || 0) + 1}}));
@@ -125,33 +129,6 @@ export function useAlarmController() {
     }
 
     useEffect(() => {
-        let stopped = false, checking = false;
-        const controller = new AbortController();
-
-        async function check() {
-            if (checking) return;
-            checking = true;
-            try {
-                const response = await fetch('/api/network', {cache: 'no-store', signal: controller.signal});
-                const result = await response.json();
-                if (!stopped) setOnline(navigator.onLine && (result.connected ?? navigator.onLine));
-            } catch {
-                if (!stopped) setOnline(false);
-            } finally {
-                checking = false;
-            }
-        }
-
-        networkRetry.current = check;
-        void check();
-        const timer = setInterval(() => void check(), 1000);
-        return () => {
-            stopped = true;
-            controller.abort();
-            clearInterval(timer);
-        };
-    }, []);
-    useEffect(() => {
         if (gate !== 'captcha') return;
         const timer = setInterval(() => {
             setCaptchaOrder(order => {
@@ -185,7 +162,7 @@ export function useAlarmController() {
     }, [gate]);
     useEffect(() => {
         if (inside && dismissing && !gate && !checkout && online && ringing) authorizeDismissal();
-    }, [inside, dismissing, gate, checkout, online, state]);
+    }, [inside, dismissing, gate, checkout, online, ringing, state.expired, state.verifiedDay, state.premium, state.score, state.cookies, state.drmUntil, state.updated, state.completed.maintenance, state.completed.banner, state.completed.ads, state.completed['dismiss-fake'], state.maintenanceUntil, state.paperwork]);
     useEffect(() => {
         setState(readState());
         setNow(Date.now());
@@ -194,41 +171,6 @@ export function useAlarmController() {
     useEffect(() => {
         if (ready && !writeState(state)) setMessage('Browser storage is unavailable. This session cannot survive refresh.');
     }, [ready, state]);
-    useEffect(() => {
-        if (!ready) return;
-        const timer = setInterval(() => {
-            const time = Date.now();
-            setNow(time);
-            setState(s => {
-                let next = s;
-                if (s.activeId && s.debtAt) next = {
-                    ...next,
-                    debt: accrueDebt(s.debt, (time - s.debtAt) / 60000),
-                    debtAt: time
-                };
-                if (s.snoozeUntil && time >= s.snoozeUntil) next = {...next, snoozeUntil: 0, expired: true};
-                if (!s.activeId) {
-                    const alarm = s.alarms.find(a => a.enabled && a.nextAt <= time);
-                    if (alarm) next = {
-                        ...next,
-                        activeId: alarm.id,
-                        debtAt: time,
-                        expired: true,
-                        alarms: s.alarms.map(a => a.id === alarm.id ? {...a, nextAt: nextAlarm(a.time, time)} : a),
-                        completed: {...s.completed, 'dismiss-fake': false, ads: false, maintenance: false}
-                    };
-                }
-                return next;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [ready]);
-    useEffect(() => {
-        if (ringing && audio) void startAlarmSound(state.volume, state.sound).catch(() => setAudio(false)); else stopAlarmSound();
-    }, [ringing, audio, state.volume, state.sound]);
-    useEffect(() => () => {
-        void disposeAudio();
-    }, []);
     useEffect(() => {
         const shortcut = (e: KeyboardEvent) => {
             if (e.ctrlKey && e.shiftKey && e.code === 'KeyD') {
@@ -281,8 +223,7 @@ export function useAlarmController() {
         }
         setDismissing(false);
         stopAlarmSound();
-        update({activeId: null, snoozeUntil: 0, debtAt: 0, pendingSnooze: null});
-        setState(s => ({...s, xp: s.xp + 25}));
+        update(previous => ({activeId: null, snoozeUntil: 0, debtAt: 0, pendingSnooze: null, xp: previous.xp + 25}));
         setGate(null);
         notify('Dismissal authorized. Your next scheduled alarm remains enabled.');
     }
@@ -376,97 +317,14 @@ export function useAlarmController() {
         open('queue');
     }
 
-    function purchase(kind: Product) {
-        const data = {
-            snooze: ['Five-minute snooze', snoozePrice(state.snoozes, state.score)],
-            loot: ['Random snooze crate · 0–60 seconds', 299],
-            premium: ['WakeUp Premium · first month', 2999],
-            dlc: ['Peace & Quiet · perpetual device license', 4999],
-            priority: ['Priority dismissal placement', 999],
-            dismiss: ['Alarm dismissal authorization', 99]
-        } as const;
-        if ((kind === 'snooze' || kind === 'loot') && !ringing) {
-            notify('A snooze requires an active alarm.');
-            return;
-        }
-        encounter('fees');
-        if (kind === 'snooze') encounter('pay-snooze');
-        if (kind === 'loot') encounter('lootbox');
-        const hour = new Date().getHours();
-        const peak = kind === 'dismiss' && hour >= 5 && hour < 9;
-        if (peak) encounter('surge');
-        if (kind === 'dismiss') encounter('tip');
-        setCheckout({
-            kind,
-            title: data[kind][0],
-            base: data[kind][1],
-            peak,
-            id: `WAC-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
-        });
-        setTip(0);
-        setDecline(false);
-        paying.current = false;
-        setGate(null);
-    }
-
-    function pay() {
-        if (!checkout || checkout.paid || paying.current) return;
-        if (checkout.kind === 'dismiss' && !online) {
-            setCheckout(null);
-            open('drm');
-            return;
-        }
-        if (checkout.kind === 'dismiss' && !validGratuity(tip)) {
-            notify('Gratuity rejected. The minimum service appreciation is 30%.');
-            return;
-        }
-        if (decline) {
-            notify('PAY-402: The wallet declined this request. Select another payment method to retry.');
-            return;
-        }
-        paying.current = true;
-        const receipt = {
-            ...invoice(checkout.base, checkout.peak, tip),
-            id: checkout.id,
-            title: checkout.title,
-            at: Date.now()
-        };
-        setState(s => ({
-            ...s,
-            balance: s.balance - receipt.total,
-            receipts: [receipt, ...s.receipts],
-            premium: s.premium || checkout.kind === 'premium',
-            dlc: s.dlc || checkout.kind === 'dlc',
-            pendingSnooze: checkout.kind === 'snooze' || checkout.kind === 'loot' ? checkout.kind : s.pendingSnooze
-        }));
-        setCheckout({...checkout, paid: receipt});
-        complete(checkout.kind);
-        if (checkout.kind === 'dismiss') silence();
-        if (checkout.kind === 'dlc') update({volume: 0});
-        if (checkout.kind === 'snooze' || checkout.kind === 'loot') {
-            pendingSnooze.current = checkout.kind;
-            paidSnooze.current = true;
-        }
-    }
-
-    function returnFromPayment() {
-        if (!checkout) return;
-        const kind = checkout.kind;
-        setCheckout(null);
-        if (kind === 'dismiss') notify('Your dismissal receipt is available in Billing.');
-        else if (kind === 'snooze' || kind === 'loot') open('rating');
-        else if (kind === 'priority') open('queue');
-        else if (kind === 'dlc') {
-            update({volume: 0});
-            setAlarmVolume(0);
-            notify('Peace & Quiet installed. Output muted.');
-        } else notify('Premium activated. Request dismissal to continue.');
-    }
-
     function activateSnooze() {
         const seconds = (state.pendingSnooze || pendingSnooze.current) === 'loot' ? Math.floor(Math.random() * 61) : 300;
-        update({snoozeUntil: seconds ? Date.now() + seconds * 1000 : 0, pendingSnooze: null});
-        setState(s => ({...s, snoozes: s.snoozes + 1, score: Math.max(0, s.score - 35), xp: s.xp + 5}));
+        update(previous => ({snoozeUntil: seconds ? Date.now() + seconds * 1000 : 0,
+            pendingSnooze: null, snoozes: previous.snoozes + 1,
+            score: Math.max(0, previous.score - 35), xp: previous.xp + 5}));
+        if (seconds === 0 && audio) {
+            void startAlarmSound(state.volume, state.sound).catch(() => setAudio(false));
+        }
         encounter('credit');
         encounter('debt');
         paidSnooze.current = false;
@@ -485,7 +343,10 @@ export function useAlarmController() {
     }
 
     function saveAlarm() {
-        if (!editor || !/^\d{2}:\d{2}$/.test(editor.time)) return;
+        if (!editor || !isValidAlarmTime(editor.time)) {
+            notify('Enter a valid alarm time.');
+            return;
+        }
         if (state.score < 500 && editor.time > '06:00') {
             encounter('credit');
             notify('Credit policy CR-500 restricts new wake-up times to 06:00 or earlier.');
@@ -526,14 +387,16 @@ export function useAlarmController() {
         update({lockedUntil: 0});
     }
 
-    const stars = (value: number, rate: (n: number) => void) => <div className="star-rating" role="group"
-                                                                     aria-label="Service rating">{[1, 2, 3, 4, 5].map(n =>
-        <button type="button" key={n} aria-label={`Rate ${n} ${n === 1 ? 'star' : 'stars'}`} aria-pressed={value === n}
-                onClick={() => rate(n)}><Star size={32} fill={n <= value ? 'currentColor' : 'none'}/></button>)}</div>;
-
     function resetSession() {
+        let fresh: SavedState;
+        try {
+            fresh = resetState();
+        } catch {
+            notify('Storage could not be cleared. Check browser storage permissions.');
+            return;
+        }
         sessionVersion.current++;
-        paying.current = false;
+        resetCheckout();
         paidSnooze.current = false;
         resume.current = () => {
         };
@@ -543,17 +406,11 @@ export function useAlarmController() {
         stopAlarmSound();
         setAudio(false);
         setDismissing(false);
-        try {
-            setState(resetState());
-        } catch {
-            notify('Storage could not be cleared. Check browser storage permissions.');
-            return;
-        }
+        setState(fresh);
         setPage('alarms');
         setFast(false);
         setTools(false);
         setGate(null);
-        setCheckout(null);
         setEditor(null);
         setInside(false);
         setLogin(0);
@@ -565,8 +422,6 @@ export function useAlarmController() {
         setRound(0);
         setStep(0);
         setElapsed(0);
-        setTip(0);
-        setDecline(false);
         setCaptcha(null);
         setSelected([]);
         setCaptchaFor('accessibility');
@@ -646,18 +501,21 @@ export function useAlarmController() {
             if (!ringing) trigger();
             pendingSnooze.current = 'snooze';
         }
-        open(id as Gate);
+        if (Object.prototype.hasOwnProperty.call(titles, id)) open(id as Exclude<Gate, null>);
+        else notify('Unsupported presenter feature.');
     }
 
-    const button = (label: string, action: () => void, disabled = false, secondary = false) => <button type="button"
-                                                                                                       className={`button${secondary ? ' secondary' : ''}`}
-                                                                                                       disabled={disabled}
-                                                                                                       onClick={action}>{label}</button>;
-    const row = (label: string, description: string, control: ReactNode) => <div className="setting-row">
-        <div><strong>{label}</strong><p>{description}</p></div>
-        {control}</div>;
-
     return {
-state, setState, ready, setReady, login, setLogin, inside, setInside, email, setEmail, password, setPassword, message, setMessage, page, setPage, gate, setGate, step, setStep, elapsed, setElapsed, now, setNow, fast, setFast, tools, setTools, input, setInput, code, setCode, round, setRound, captcha, setCaptcha, selected, setSelected, captchaFor, setCaptchaFor, editor, setEditor, checkout, setCheckout, tip, setTip, decline, setDecline, audio, setAudio, queue, setQueue, privacyY, setPrivacyY, privacyEnd, setPrivacyEnd, online, setOnline, dismissing, setDismissing, captchaOrder, setCaptchaOrder, refusalPosition, setRefusalPosition, refusalRef, afterSurvey, sessionVersion, networkRetry, privacyRef, resume, pendingSnooze, paidSnooze, paying, level, ringing, update, notify, encounter, complete, open, close, dailyThen, enableAudio, afterForm, trigger, dismiss, purchase, pay, returnFromPayment, activateSnooze, snooze, saveAlarm, exportStatement, signOut, stars, resetSession, showFeature, button, row
+        state, setState, ready, login, setLogin, inside, setInside, email, setEmail,
+        password, setPassword, message, setMessage, page, setPage, gate, setGate,
+        step, setStep, elapsed, now, fast, setFast, tools, setTools, input, setInput,
+        code, setCode, round, setRound, captcha, setCaptcha, selected, setSelected,
+        captchaFor, setCaptchaFor, editor, setEditor, checkout, setCheckout, tip, setTip,
+        audio, queue, privacyY, privacyEnd, online, dismissing, setDismissing,
+        captchaOrder, refusalPosition, refusalRef, afterSurvey, sessionVersion,
+        retryNetwork, privacyRef, resume, pendingSnooze, paidSnooze, level, ringing,
+        update, notify, encounter, complete, open, close, dailyThen, enableAudio,
+        afterForm, trigger, dismiss, purchase, pay, returnFromPayment, activateSnooze,
+        snooze, saveAlarm, exportStatement, signOut, resetSession, showFeature
     };
 }
