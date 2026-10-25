@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
+import './globals.css';
 
 export const metadata: Metadata = {
-    title: "WakeUp™ Enterprise",
-    description: "Enterprise alarm management and wakefulness services."
+    title: 'WakeUp™ Enterprise',
+    description: 'Enterprise alarm management and wakefulness services.',
 };
-export default function RootLayout({children}: Readonly<{ children: React.ReactNode }>) {
-    return <html lang="en">
-    <body>{children}</body>
-    </html>;
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+    return <html lang="en"><body>{children}</body></html>;
 }

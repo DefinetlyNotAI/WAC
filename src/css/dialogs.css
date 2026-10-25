@@ -1,0 +1,458 @@
+.notice {
+    position: fixed;
+    bottom: 8px;
+    right: 8px;
+    z-index: 130;
+    max-width: min(460px, calc(100vw - 16px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ff0;
+    color: #000;
+    border: 3px ridge #000;
+    padding: 8px;
+    font: 13px monospace
+}
+
+.notice button {
+    margin-left: auto
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, .58);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px
+}
+
+.survey-layer {
+    z-index: 60
+}
+
+.payment-layer {
+    z-index: 100
+}
+
+.developer-layer {
+    z-index: 120
+}
+
+.dialog {
+    width: 100%;
+    max-width: 540px;
+    max-height: calc(100dvh - 24px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #c0c0c0;
+    border: 4px ridge #eee;
+    overflow: hidden
+}
+
+.dialog.small {
+    max-width: 440px
+}
+
+.checkout-dialog {
+    max-width: 490px
+}
+
+.developer-dialog {
+    max-width: 700px
+}
+
+.dialog-header {
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    background: #000080;
+    color: #fff;
+    border-bottom: 2px solid #000
+}
+
+.dialog-header h2 {
+    font-size: 19px;
+    margin: 0;
+    color: #fff
+}
+
+.dialog-content {
+    padding: 12px;
+    min-height: 0;
+    overflow: auto;
+    overflow-wrap: anywhere
+}
+
+.dialog-content p {
+    font-size: 14px;
+    margin: 7px 0 12px
+}
+
+.dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 12px;
+    border-top: 2px groove white;
+    font-size: 12px
+}
+
+.dialog-footer > span {
+    display: flex;
+    align-items: center;
+    gap: 6px
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px
+}
+
+.detail {
+    padding: 7px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px dotted #000;
+    font-size: 13px
+}
+
+.detail strong {
+    color: #000
+}
+
+.document-scroll {
+    max-height: 175px;
+    overflow: auto;
+    background: #fff;
+    border: 2px inset #eee;
+    padding: 8px;
+    margin: 9px 0
+}
+
+.document-scroll p {
+    font-size: 12px !important
+}
+
+.code-preview {
+    font: bold 28px monospace;
+    text-align: center;
+    letter-spacing: 3px;
+    color: #000080;
+    background: #fff;
+    border: 2px dashed #000;
+    padding: 12px;
+    margin: 12px 0
+}
+
+.subscription, .sponsored {
+    padding: 12px;
+    border: 2px groove #fff;
+    margin-bottom: 12px;
+    background: #ddd
+}
+
+.subscription > span, .sponsored > span {
+    font: 12px monospace
+}
+
+.subscription h3, .sponsored h3 {
+    margin: 8px 0
+}
+
+.subscription strong {
+    font-size: 21px
+}
+
+.occluded {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative
+}
+
+.occluder {
+    position: absolute;
+    left: 20%;
+    right: 5%;
+    top: 30%;
+    bottom: 20%;
+    background: #ff0;
+    border: 2px solid #000;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px
+}
+
+.captcha-grid {
+    display: grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap: 4px;
+    max-width: 290px;
+    margin: 10px auto;
+    transition: none
+}
+
+.captcha-grid button {
+    height: 74px;
+    font-size: 26px;
+    background: #ddd;
+    border: 2px outset #fff;
+    font-variant-numeric: tabular-nums
+}
+
+.captcha-grid button.chosen {
+    background: #ff0;
+    border: 3px inset #000
+}
+
+.queue-number, .error-code {
+    font: bold 40px "Courier New", monospace;
+    text-align: center;
+    padding: 10px
+}
+
+.invoice-list {
+    font-size: 13px
+}
+
+.invoice-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dotted #000
+}
+
+.invoice-list .invoice-total {
+    font-size: 17px;
+    font-weight: bold;
+    border-top: 2px solid #000
+}
+
+.invoice-list strong {
+    white-space: nowrap
+}
+
+.checkout-order {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border: 2px inset #eee;
+    background: #fff;
+    padding: 8px;
+    margin-bottom: 10px
+}
+
+.checkout-order span, .checkout-order small {
+    font: 12px monospace
+}
+
+.checkout-order strong {
+    font-size: 16px
+}
+
+.checkout-payment {
+    border-top: 2px groove white;
+    margin-top: 10px;
+    padding-top: 10px
+}
+
+.checkout-payment-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    margin-bottom: 10px
+}
+
+.checkout-payment-title span {
+    margin-left: auto;
+    border: 1px solid #000;
+    padding: 2px;
+    font-size: 11px
+}
+
+.checkout-fields {
+    display: grid;
+    grid-template-columns:1fr 1fr;
+    gap: 9px
+}
+
+.checkout-submit {
+    width: 100%;
+    margin-top: 10px
+}
+
+.checkout-receipt {
+    text-align: center;
+    padding: 9px
+}
+
+.checkout-receipt .detail {
+    text-align: left
+}
+
+.receipt-check {
+    width: 45px;
+    height: 45px;
+    margin: auto;
+    background: #00aa00;
+    color: #fff;
+    border: 2px solid #000;
+    display: grid;
+    place-items: center
+}
+
+.receipt {
+    padding: 10px 0;
+    border-bottom: 1px solid #000
+}
+
+summary {
+    cursor: pointer
+}
+
+.consent {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 12px 0
+}
+
+.consent input {
+    flex-shrink: 0
+}
+
+.privacy-document {
+    height: 230px;
+    max-height: 230px;
+    overflow: hidden;
+    scrollbar-width: none
+}
+
+.privacy-document section {
+    margin-bottom: 20px
+}
+
+.privacy-document p {
+    font-size: 13px !important
+}
+
+.ad-creative {
+    background: #000080;
+    color: #ffff00;
+    text-align: center
+}
+
+.ad-creative svg {
+    display: block;
+    margin: 12px auto
+}
+
+.ad-creative h3 {
+    font-size: 27px
+}
+
+.ad-creative p {
+    color: #fff
+}
+
+.ad-creative strong {
+    font-size: 26px
+}
+
+.ad-creative small {
+    font-size: 12px
+}
+
+.feature-tools {
+    display: grid;
+    grid-template-columns:1fr 1fr;
+    gap: 5px
+}
+
+.feature-tools .button {
+    text-align: left
+}
+
+.fleeing {
+    transition: none;
+    touch-action: none;
+    user-select: none
+}
+
+.dialog:has(.fleeing), .dialog:has(.fleeing) .dialog-content {
+    overflow: visible
+}
+
+fieldset {
+    border: 2px groove #fff;
+    margin: 10px 0;
+    padding: 10px
+}
+
+pre {
+    overflow: auto;
+    font: 12px monospace
+}
+
+.accessible .button {
+    min-height: 45px;
+    font-size: 15px
+}
+
+.connection-error {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #c0c0c0;
+    color: #000
+}
+
+.connection-error > div {
+    max-width: 560px;
+    background: #fff;
+    border: 3px ridge #eee;
+    padding: 12px
+}
+
+.connection-error h1 {
+    font-size: 26px
+}
+
+.connection-error code {
+    display: block;
+    font: 13px monospace;
+    margin: 18px 0
+}
+
+.star-rating {
+    display: flex;
+    gap: 4px;
+    margin: 12px 0
+}
+
+.star-rating button {
+    font-size: 22px;
+    min-width: 42px;
+    min-height: 42px;
+    color: #000
+}

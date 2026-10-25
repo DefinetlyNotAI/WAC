@@ -1,0 +1,415 @@
+.shell {
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    overflow: hidden
+}
+
+.sidebar {
+    width: 215px;
+    flex-shrink: 0;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 9px;
+    background: #c0c0c0;
+    border-right: 3px ridge #fff
+}
+
+.brand {
+    padding: 4px 2px 16px
+}
+
+.brand small {
+    display: block;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: normal;
+    letter-spacing: 0
+}
+
+.sidebar-heading {
+    border-bottom: 1px solid #000;
+    padding: 3px
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px
+}
+
+.nav-link, .signout {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    text-align: left;
+    background: #d3d3d3;
+    color: #0000ee;
+    text-decoration: underline;
+    border: 1px solid #888;
+    padding: 7px;
+    font: 14px "Times New Roman", serif;
+    min-height: 33px
+}
+
+.nav-link:hover, .signout:hover {
+    background: #fff
+}
+
+.nav-link.is-active {
+    background: #000080;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid black;
+    font-weight: bold
+}
+
+.sidebar-end {
+    margin-top: auto
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-top: 2px groove #fff;
+    padding: 10px 3px
+}
+
+.profile div {
+    flex: 1;
+    min-width: 0
+}
+
+.profile strong, .profile small {
+    display: block;
+    font-size: 12px;
+    overflow-wrap: anywhere
+}
+
+.avatar {
+    width: 29px;
+    height: 29px;
+    background: #808080;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    border: 1px solid #000;
+    font-family: monospace
+}
+
+.signout, .dev-link {
+    width: 100%;
+    text-align: left
+}
+
+.dev-tools {
+    padding: 5px;
+    background: #ddd;
+    border: 2px inset #eee
+}
+
+.dev-tools button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin: 3px 0
+}
+
+.workspace {
+    flex: 1;
+    min-width: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff
+}
+
+.topbar {
+    flex-shrink: 0;
+    min-height: 40px;
+    background: #000080;
+    color: #fff;
+    border-bottom: 3px ridge #fff;
+    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px
+}
+
+.topbar .today, .topbar .slash {
+    color: #fff
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.slash {
+    margin: 0 5px
+}
+
+.pill {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    border: 1px solid #000;
+    padding: 3px 5px;
+    background: #ff0;
+    color: #000;
+    font: 12px monospace
+}
+
+.content {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    padding: 14px 18px 25px;
+    background: #fff;
+    overscroll-behavior: contain
+}
+
+.heading, .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap
+}
+
+.heading .muted, .section-header p {
+    margin: 4px 0;
+    font-size: 13px
+}
+
+.section-card, .metric {
+    background: #fff;
+    border: 2px solid #777;
+    padding: 10px;
+    margin-bottom: 12px;
+    min-width: 0;
+    box-shadow: none
+}
+
+.section-card {
+    border-top: 5px solid #000080
+}
+
+.section-card > p, .section-card > div > p {
+    font-size: 13px
+}
+
+.count, .status, .setting-state {
+    display: inline-block;
+    border: 1px solid #000;
+    background: #ff0;
+    color: #000;
+    padding: 2px 4px;
+    font: 12px monospace
+}
+
+.empty {
+    padding: 25px 10px;
+    text-align: center;
+    border: 1px dotted #000;
+    display: flex;
+    align-items: center;
+    flex-direction: column
+}
+
+.empty-icon, .alarm-clock {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    background: #ddd;
+    border: 1px solid #000;
+    margin-bottom: 7px
+}
+
+.empty p {
+    max-width: 420px
+}
+
+.alarm-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid #777;
+    flex-wrap: wrap
+}
+
+.alarm-description {
+    flex: 1;
+    min-width: 120px
+}
+
+.alarm-description strong {
+    font-size: 22px;
+    display: block
+}
+
+.alarm-description span {
+    font-size: 12px
+}
+
+.summary-row {
+    display: grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px
+}
+
+.metric {
+    margin-bottom: 0;
+    background: #eee;
+    border: 2px inset #fff;
+    padding: 10px
+}
+
+.metric > span {
+    font-size: 12px
+}
+
+.metric strong {
+    display: block;
+    font-size: 26px;
+    color: #000080;
+    margin: 8px 0
+}
+
+.metric strong small {
+    font-size: 12px;
+    color: #000
+}
+
+.metric p {
+    font-size: 12px;
+    margin: 0
+}
+
+.slim, .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px
+}
+
+.volume-controls {
+    display: flex;
+    gap: 7px;
+    align-items: center
+}
+
+.volume-controls input {
+    max-width: 150px
+}
+
+.ring-banner {
+    border: 3px dashed red;
+    background: #ff0;
+    color: #000;
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px
+}
+
+.ring-banner span {
+    color: red;
+    font-weight: bold
+}
+
+.ring-banner h2 {
+    margin: 5px 0
+}
+
+.ring-banner p {
+    margin: 0
+}
+
+.billing-grid {
+    display: grid;
+    grid-template-columns:1fr 1fr;
+    gap: 10px
+}
+
+.plan-price, .credit-number {
+    font-size: 30px;
+    font-weight: bold;
+    margin: 15px 0
+}
+
+.plan-price small, .credit-number small {
+    font-size: 12px;
+    font-weight: normal
+}
+
+.loader {
+    height: 16px;
+    border: 2px inset #eee;
+    background: #ddd;
+    margin: 12px 0;
+    overflow: hidden
+}
+
+.loader > div {
+    height: 100%;
+    background: repeating-linear-gradient(90deg, #000080 0 12px, #fff 12px 15px);
+    transition: none
+}
+
+.ledger {
+    font-size: 13px
+}
+
+.ledger div {
+    border-bottom: 1px dotted #000;
+    padding: 8px 0
+}
+
+.rewards-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-weight: bold
+}
+
+.rewards-top strong {
+    color: #000080
+}
+
+.setting-row {
+    padding: 11px 0;
+    border-top: 1px solid #999;
+    flex-wrap: wrap
+}
+
+.setting-row strong {
+    font-size: 14px
+}
+
+.setting-row p {
+    font-size: 12px;
+    margin: 5px 0
+}
+
+.setting-state {
+    max-width: 200px;
+    text-align: right;
+    background: #ddd
+}

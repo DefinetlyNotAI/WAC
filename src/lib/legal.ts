@@ -47,6 +47,7 @@ export const terms = [
     ['Support hours', 'Cancellation agents accept requests only during the sleeping window from 22:00 through 06:00. A representative then requires a reason and an explicit refusal of a retention offer.'],
     ['Termination', 'Resetting the local workspace erases alarms, corporate purchases, receipts, and encounter history. Clearing browser storage has the same effect. Export any desired statement before termination.'],
 ] as const;
+
 export const privacy = [
     ['Controller', 'WakeUp Enterprise administers account, alarm, billing, and service eligibility records. The compliance department defines retention schedules and the conditions under which a request to stop working may be considered.'],
     ['Stored records', 'Alarm times, next scheduled timestamps, enabled states, current ringing state, snooze deadlines, volume, and sound selection are retained in local browser storage. These records allow the workspace to recover after refresh.'],

@@ -1,0 +1,107 @@
+@media (max-width: 850px) {
+    .sidebar {
+        width: 180px
+    }
+
+    .content {
+        padding: 11px
+    }
+
+    .summary-row {
+        gap: 6px
+    }
+
+    .metric {
+        padding: 7px
+    }
+}
+
+@media (max-width: 650px) {
+    .shell {
+        flex-direction: column
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        padding: 5px
+    }
+
+    .brand {
+        padding: 4px
+    }
+
+    .sidebar-heading, .sidebar-end {
+        display: none
+    }
+
+    .sidebar nav {
+        flex-direction: row;
+        overflow-x: auto
+    }
+
+    .nav-link {
+        flex-shrink: 0;
+        padding: 5px;
+        font-size: 12px
+    }
+
+    .nav-link svg {
+        display: none
+    }
+
+    .workspace {
+        height: auto;
+        flex: 1;
+        min-height: 0
+    }
+
+    .topbar {
+        min-height: 34px;
+        padding: 5px
+    }
+
+    .today, .auth-system {
+        display: none
+    }
+
+    .content {
+        padding: 8px
+    }
+
+    .summary-row, .billing-grid, .feature-tools {
+        grid-template-columns:1fr
+    }
+
+    .ring-banner, .setting-row, .slim {
+        align-items: flex-start;
+        flex-direction: column
+    }
+
+    .auth-header {
+        padding: 7px
+    }
+
+    .auth-card {
+        padding: 10px
+    }
+
+    .auth-footer {
+        padding: 9px
+    }
+
+    .checkout-fields {
+        gap: 6px
+    }
+
+    .dialog-header, .dialog-content, .dialog-footer {
+        padding-left: 8px;
+        padding-right: 8px
+    }
+
+    .notice {
+        bottom: 4px;
+        right: 4px
+    }
+}

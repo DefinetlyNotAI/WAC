@@ -1,16 +1,50 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
+/* Runtime */
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-const run = promisify(execFile);
 
-export async function GET() {
-    if (process.platform !== 'win32') return Response.json({connected: null}, {headers: {'Cache-Control': 'no-store'}});
+/* Types */
+
+type NetworkStatus = {
+    connected: boolean | null;
+};
+
+/* Constants */
+
+const execFileAsync = promisify(execFile);
+const RESPONSE_HEADERS = { 'Cache-Control': 'no-store' };
+const WIFI_CONNECTED_PATTERN = /^\s*State\s*:\s*connected\s*$/im;
+const NETWORK_TIMEOUT_MS = 2500;
+
+/* Internal Helpers */
+
+function response(connected: NetworkStatus['connected']): Response {
+    return Response.json({ connected }, { headers: RESPONSE_HEADERS });
+}
+
+async function isWifiConnected(): Promise<boolean> {
+    const { stdout } = await execFileAsync(
+        'netsh.exe',
+        ['wlan', 'show', 'interfaces'],
+        { windowsHide: true, timeout: NETWORK_TIMEOUT_MS },
+    );
+
+    return WIFI_CONNECTED_PATTERN.test(stdout);
+}
+
+/* Route Handler */
+
+export async function GET(): Promise<Response> {
+    if (process.platform !== 'win32') {
+        return response(null);
+    }
+
     try {
-        const {stdout} = await run('netsh.exe', ['wlan', 'show', 'interfaces'], {windowsHide: true, timeout: 2500});
-        return Response.json({connected: /^\s*State\s*:\s*connected\s*$/im.test(stdout)}, {headers: {'Cache-Control': 'no-store'}});
+        return response(await isWifiConnected());
     } catch {
-        return Response.json({connected: false}, {headers: {'Cache-Control': 'no-store'}});
+        return response(false);
     }
 }

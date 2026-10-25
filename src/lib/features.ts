@@ -1,207 +1,257 @@
-export type Category = 'Monetization' | 'Authentication' | 'Infrastructure' | 'Bureaucracy' | 'Hostile UX';
-export type Feature = { id: string; title: string; category: Category; description: string };
-export const features: Feature[] = [
+
+/* Types */
+
+export type Category = (typeof categoryList)[number];
+
+export type Feature = {
+    id: string;
+    title: string;
+    category: Category;
+    description: string;
+};
+
+/* Constants */
+
+export const categoryList = [
+    'Monetization',
+    'Authentication',
+    'Infrastructure',
+    'Bureaucracy',
+    'Hostile UX',
+] as const;
+
+/* Features */
+
+export const features = [
+    // Monetization
     {
         id: 'pay-snooze',
         title: 'Pay-to-Snooze™',
         category: 'Monetization',
-        description: 'Snoozes start at $0.99 and double each time.'
+        description: 'Snoozes start at $0.99 and double each time.',
     },
     {
         id: 'premium',
         title: 'WakeUp Premium',
         category: 'Monetization',
-        description: 'Free users can dismiss only between 9 AM and 5 PM.'
+        description: 'Free users can dismiss only between 9 AM and 5 PM.',
     },
     {
         id: 'ads',
         title: 'Unskippable Ads',
         category: 'Monetization',
-        description: 'A 30-second ad stands between you and silence.'
+        description: 'A 30-second ad stands between you and silence.',
     },
     {
         id: 'surge',
         title: 'Surge Pricing',
         category: 'Monetization',
-        description: 'The morning rush inflates dismissal prices.'
+        description: 'The morning rush inflates dismissal prices.',
     },
     {
         id: 'battlepass',
         title: 'Alarm Battle Pass',
         category: 'Monetization',
-        description: 'Earn wake XP. Sounds unlock at level 30.'
+        description: 'Earn wake XP. Sounds unlock at level 30.',
     },
     {
         id: 'debt',
         title: 'Sleep Debt™',
         category: 'Monetization',
-        description: 'Overdue sleep accrues 29.99% annual interest.'
+        description: 'Overdue sleep accrues 29.99% annual interest.',
     },
     {
         id: 'lootbox',
         title: 'Loot Box Snooze',
         category: 'Monetization',
-        description: 'Pay $2.99 for 0 to 60 seconds of snooze.'
+        description: 'Pay $2.99 for 0 to 60 seconds of snooze.',
     },
-    {id: 'tip', title: 'Tip Your Alarm', category: 'Monetization', description: 'Choose a 20%, 25%, or 30% tip.'},
+    {
+        id: 'tip',
+        title: 'Tip Your Alarm',
+        category: 'Monetization',
+        description: 'Choose a 20%, 25%, or 30% tip.',
+    },
     {
         id: 'cancel',
         title: 'Subscription Cancellation',
         category: 'Monetization',
-        description: 'Call support during your sleeping hours.'
+        description: 'Call support during your sleeping hours.',
     },
-    {id: 'dlc', title: 'Peace & Quiet DLC', category: 'Monetization', description: 'The mute button costs extra.'},
+    {
+        id: 'dlc',
+        title: 'Peace & Quiet DLC',
+        category: 'Monetization',
+        description: 'The mute button costs extra.',
+    },
     {
         id: 'fees',
         title: 'Absurd Fees',
         category: 'Monetization',
-        description: 'Includes convenience, fee fee, and fee fii fo fum fees.'
+        description: 'Includes convenience, fee fee, and fee fii fo fum fees.',
     },
     {
         id: 'credit',
         title: 'Alarm Credit Score',
         category: 'Monetization',
-        description: 'Snoozing damages your sleep creditworthiness.'
+        description: 'Snoozing damages your sleep creditworthiness.',
     },
+
+    // Authentication
     {
         id: 'totp',
         title: 'Mandatory 2FA',
         category: 'Authentication',
-        description: 'First four correct TOTP codes are lost.'
+        description: 'First four correct TOTP codes are lost.',
     },
     {
         id: 'password-expiry',
         title: 'Password Expiration',
         category: 'Authentication',
-        description: 'Your password expires right when the alarm rings.'
+        description: 'Your password expires right when the alarm rings.',
     },
     {
         id: 'device',
         title: 'Device Verification',
         category: 'Authentication',
-        description: 'This identical device is suspicious every morning.'
+        description: 'This identical device is suspicious every morning.',
     },
     {
         id: 'account',
         title: 'Registration Paradox',
         category: 'Authentication',
-        description: 'Your email exists for signup but not for login.'
+        description: 'Your email exists for signup but not for login.',
     },
     {
         id: 'reset',
         title: 'Broken Password Reset',
         category: 'Authentication',
-        description: 'Reset link shown locally; opening it requires login.'
+        description: 'Reset link shown locally; opening it requires login.',
     },
+
+    // Infrastructure
     {
         id: 'drm',
         title: 'Always-online DRM',
         category: 'Infrastructure',
-        description: 'Local adapter status masquerades as cloud entitlement.'
+        description: 'Local adapter status masquerades as cloud entitlement.',
     },
     {
         id: 'sync',
         title: 'Cloud Synchronization',
         category: 'Infrastructure',
-        description: 'Every interaction pretends to contact a cloud server.'
+        description: 'Every interaction pretends to contact a cloud server.',
     },
-    {id: 'update', title: 'Forced Updates', category: 'Infrastructure', description: 'A mandatory fake 4.7 GB update.'},
+    {
+        id: 'update',
+        title: 'Forced Updates',
+        category: 'Infrastructure',
+        description: 'A mandatory fake 4.7 GB update.',
+    },
     {
         id: 'region',
         title: 'Region Locking',
         category: 'Infrastructure',
-        description: 'Snoozing is banned in your detected OS region.'
+        description: 'Snoozing is banned in your detected OS region.',
     },
     {
         id: 'queue',
         title: 'Queue System',
         category: 'Infrastructure',
-        description: '14,892 fictional users are ahead of you.'
+        description: '14,892 fictional users are ahead of you.',
     },
     {
         id: 'maintenance',
         title: 'Server Maintenance',
         category: 'Infrastructure',
-        description: 'A local timer pretends dismissal is unavailable.'
+        description: 'A local timer pretends dismissal is unavailable.',
     },
     {
         id: 'rate',
         title: 'Sign-out Retention',
         category: 'Infrastructure',
-        description: 'Signing out requires a seven-day account retention period.'
+        description: 'Signing out requires a seven-day account retention period.',
     },
     {
         id: 'startup',
         title: 'Fake Startup Loading',
         category: 'Infrastructure',
-        description: 'wakefulness.exe stalls at 99% then verifies consciousness.'
+        description: 'wakefulness.exe stalls at 99% then verifies consciousness.',
     },
+
+    // Bureaucracy
     {
         id: 'terms',
         title: 'Terms & Conditions',
         category: 'Bureaucracy',
-        description: '47 pages, with a fleeing I Disagree button.'
+        description: '47 pages, with a fleeing I Disagree button.',
     },
     {
         id: 'cookies',
         title: 'Cookie Consent',
         category: 'Bureaucracy',
-        description: 'Reject All rejects your right to silence.'
+        description: 'Reject All rejects your right to silence.',
     },
     {
         id: 'captcha',
         title: 'CAPTCHA Hell',
         category: 'Bureaucracy',
-        description: 'Solve a never-ending series of human checks.'
+        description: 'Solve a never-ending series of human checks.',
     },
     {
         id: 'paperwork',
         title: 'Government Paperwork',
         category: 'Bureaucracy',
-        description: 'WAKE-1040 processing takes 3–5 business days.'
+        description: 'WAKE-1040 processing takes 3–5 business days.',
     },
     {
         id: 'onboarding',
         title: 'Mandatory Onboarding',
         category: 'Bureaucracy',
-        description: 'Learn to use the concept of alarms, daily.'
+        description: 'Learn to use the concept of alarms, daily.',
     },
     {
         id: 'privacy',
         title: 'Privacy Policy Torture',
         category: 'Bureaucracy',
-        description: 'Read at one pixel per second.'
+        description: 'Read at one pixel per second.',
     },
+
+    // Hostile UX
     {
         id: 'fake-dismiss',
         title: 'Deceptive Dismiss Button',
         category: 'Hostile UX',
-        description: 'Dismiss secretly means remind me tomorrow.'
+        description: 'Dismiss secretly means remind me tomorrow.',
     },
     {
         id: 'volume',
         title: 'Reversed Volume Controls',
         category: 'Hostile UX',
-        description: 'Volume down makes it louder.'
+        description: 'Volume down makes it louder.',
     },
     {
         id: 'survey',
         title: 'Mandatory Surveys',
         category: 'Hostile UX',
-        description: 'Required feedback follows completed forms.'
+        description: 'Required feedback follows completed forms.',
     },
     {
         id: 'accessibility',
         title: 'Inaccessible Accessibility',
         category: 'Hostile UX',
-        description: 'Accessibility settings are protected by CAPTCHA.'
+        description: 'Accessibility settings are protected by CAPTCHA.',
     },
     {
         id: 'banner',
         title: 'Premium Banner Obstruction',
         category: 'Hostile UX',
-        description: 'A Premium banner covers free dismissal.'
+        description: 'A Premium banner covers free dismissal.',
     },
-    {id: 'rating', title: 'Unskippable Rating Screen', category: 'Hostile UX', description: 'Rate us before snoozing.'}
-];
-export const categoryList: Category[] = ['Monetization', 'Authentication', 'Infrastructure', 'Bureaucracy', 'Hostile UX'];
+    {
+        id: 'rating',
+        title: 'Unskippable Rating Screen',
+        category: 'Hostile UX',
+        description: 'Rate us before snoozing.',
+    },
+] satisfies Feature[];
