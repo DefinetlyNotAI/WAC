@@ -101,7 +101,7 @@ export function AlarmView({app}: {app: ReturnType<typeof useAlarmController>}) {
         {assessment!=='done'&&<div className="overlay click-paywall"><section className="dialog" style={{padding:24,maxHeight:'85vh',overflow:'auto',width:'min(520px,95vw)'}}>
           {assessment==='wordle'&&<WordleSnake onDone={()=>setAssessment('document')}/>}
           {assessment==='document'&&<ProofUpload onComplete={()=>setAssessment('slider')} onPay={()=>setProofSkip(true)}/>}
-          {assessment==='document'&&proofSkip&&<div className="hostile-box"><h3>Pay $49.99 to skip verification</h3><p>Local simulated payment only.</p><button className="button" onClick={()=>{app.update({balance:app.state.balance-4999});setAssessment('slider');}}>Charge demo account</button></div>}
+          {assessment==='document'&&proofSkip&&<div className="hostile-box"><h3>Pay $49.99 to skip verification</h3><p>Local simulated payment only.</p><button className="button" onClick={()=>{app.update(previous => ({balance:previous.balance-4999}));setProofSkip(false);setAssessment('slider');}}>Charge demo account</button></div>}
           {assessment==='slider'&&<PrecisionSlider onComplete={()=>setAssessment('hold')}/>}
           {assessment==='hold'&&<HoldConfirm onComplete={()=>setAssessment('done')}/>}
         </section></div>}

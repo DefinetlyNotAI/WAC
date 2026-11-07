@@ -1,6 +1,7 @@
 
 'use client';
 
+import { evaluateGuess, isValidWakefulnessProof } from '@/lib/verification';
 import {
     useEffect,
     useRef,
@@ -174,13 +175,13 @@ export function HoldConfirm({
         start.current = null;
         setDuration(0);
 
-        if (delta >= 5000 && delta <= 5000.3) {
+        if (delta >= 5000 && delta <= 5500) {
             onComplete();
         } else {
             setFailure(
                 delta < 5000
                     ? 'Released early. Compliance restarted.'
-                    : 'Overheld by more than 0.3 ms. Compliance restarted.'
+                    : 'Held too long. Release between 5.0 and 5.5 seconds.'
             );
         }
     }
@@ -197,7 +198,7 @@ export function HoldConfirm({
 
             <p>
                 Hold for exactly 5 seconds.
-                Exceeding by 0.3 milliseconds invalidates the request.
+                Release between 5.0 and 5.5 seconds to authorize.
             </p>
 
             <button
@@ -263,6 +264,7 @@ export function ProofUpload({
     onPay: () => void;
 }) {
     const [result, setResult] = useState('');
+    const [approved, setApproved] = useState(false);
 
     return (
         <div className="hostile-box">
@@ -272,79 +274,51 @@ export function ProofUpload({
                 Upload documentary evidence that you are not sleeping.
             </p>
 
+            <p>Free approval requires a UTF-8 .txt file containing the exact phrase I AM AWAKE.</p>
+
             <input
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.txt,.docx,.zip,.webp,.gif"
-                onChange={(e) => {
+                onChange={async (e) => {
                     const file = e.target.files?.[0];
-
-                    if (!file) return;
-
-                    const ext =
-                        '.' + (file.name.split('.').pop() || '').toLowerCase();
-
-                    setResult(
-                        REASONS[ext] ||
-                        'The submitted format was not approved by the Department of Eyelids.'
-                    );
-
                     e.target.value = '';
+                    if (!file) return;
+                    setApproved(false);
+                    const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+                    if (ext === '.txt' && file.size <= 16 * 1024) {
+                        try {
+                            const content = await file.text();
+                            if (isValidWakefulnessProof(file.name, file.size, content)) {
+                                setResult('Text declaration accepted.');
+                                setApproved(true);
+                                return;
+                            }
+                        } catch {
+                            setResult('Could not read the submitted text file.');
+                            return;
+                        }
+                    }
+                    setResult(file.size > 16 * 1024
+                        ? 'Document exceeds the 16 KB verification limit.'
+                        : REASONS[ext] || 'The submitted format was not approved by the Department of Eyelids.');
                 }}
             />
 
-            {result && <p role="alert">REJECTED: {result}</p>}
+            {result && <p role="status">{approved ? 'APPROVED' : 'REJECTED'}: {result}</p>}
+            {approved && <button className="button" onClick={onComplete}>Continue verification</button>}
 
             <button className="button secondary" onClick={onPay}>
                 Pay to skip document verification
             </button>
 
             <p>
-                Free verification does not currently approve any files.
+                Non-text documents are rejected. The paid skip is optional.
             </p>
         </div>
     );
 }
 
 // WORDLE
-
-type LetterResult = 'correct' | 'present' | 'absent';
-
-function evaluateGuess(
-    guess: string,
-    answer: string
-): LetterResult[] {
-    const result: LetterResult[] = Array(
-        guess.length
-    ).fill('absent');
-
-    const remaining = new Map<string, number>();
-
-    // Exact-position matches are allocated first.
-    for (let i = 0; i < answer.length; i++) {
-        if (guess[i] === answer[i]) {
-            result[i] = 'correct';
-        } else {
-            remaining.set(
-                answer[i],
-                (remaining.get(answer[i]) ?? 0) + 1
-            );
-        }
-    }
-
-    // Misplaced matches consume the remaining letter counts.
-    for (let i = 0; i < guess.length; i++) {
-        if (result[i] === 'correct') continue;
-
-        const count = remaining.get(guess[i]) ?? 0;
-
-        if (count > 0) {
-            result[i] = 'present';
-            remaining.set(guess[i], count - 1);
-        }
-    }
-
-    return result;
-}
 
 type Position = {
     x: number;
@@ -360,7 +334,7 @@ export function WordleSnake({
                             }: {
     onDone: () => void;
 }) {
-    const [answer] = useState(
+    const [answer, setAnswer] = useState(
         () => WORDS[Math.floor(Math.random() * WORDS.length)]
     );
 
@@ -412,6 +386,7 @@ export function WordleSnake({
     }
 
     function restartWordle() {
+        setAnswer(WORDS[Math.floor(Math.random() * WORDS.length)]);
         setAttempts([]);
         setGuess('');
         setShowReset(false);

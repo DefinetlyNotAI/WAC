@@ -4,7 +4,7 @@ import { button, stars } from '../ui-controls';
 import { validApplication, wordCount, businessDue } from '@/lib/rules';
 
 export function SupportGates({ app }: { app: ReturnType<typeof useAlarmController> }) {
-    const { gate, state, inside, setGate, step, setStep, now, fast, input, setInput, setDismissing, afterSurvey, update, notify, complete, open, afterForm } = app;
+    const { gate, state, inside, setGate, step, setStep, now, fast, input, setInput, setDismissing, afterSurvey, update, notify, complete, open, afterForm, setLogin, setPassword, setEmail } = app;
     switch (gate) {
             case 'survey':
                 return <><p>Before we finish processing your form, rate the efficiency of this
@@ -80,9 +80,14 @@ export function SupportGates({ app }: { app: ReturnType<typeof useAlarmControlle
                     })} {button('Keep Premium', () => setGate(null), false, true)}</>}</>;
             }
             case 'reset':
-                return <><p>Your recovery link is available below.</p>
-                    <div className="reset-url">/reset?token=RECOVERY-PENDING</div>
-                    {button('Open reset link', () => notify(inside ? 'Recovery authorized for Jordan Miller. Your account is restored.' : '401: Sign in before resetting the password you need to sign in.'))}</>;
+                return <><p>Reset the demo sign-in flow on this device. Alarm schedules and receipts will be preserved.</p>
+                    {button('Reset sign-in flow', () => {
+                        setLogin(0);
+                        setPassword('');
+                        setEmail('');
+                        setGate(null);
+                        notify('Sign-in flow reset. Your stored alarms and receipts were preserved.');
+                    })}</>;
         default: return null;
     }
 }

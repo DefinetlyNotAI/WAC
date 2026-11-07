@@ -94,8 +94,12 @@ export function useAlarmController() {
 
     async function refreshCode() {
         const version = sessionVersion.current;
-        const next = await totp();
-        if (version === sessionVersion.current) setCode(next);
+        try {
+            const next = await totp();
+            if (version === sessionVersion.current) setCode(next);
+        } catch {
+            if (version === sessionVersion.current) notify('Verification code unavailable. Reload in a secure browser context.');
+        }
     }
 
     function close() {

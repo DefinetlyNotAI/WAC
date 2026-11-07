@@ -13,7 +13,8 @@ export function useAlarmClock(ready: boolean, setState: Dispatch<SetStateAction<
             setState(current => {
                 let next = current;
                 if (current.activeId && current.debtAt) {
-                    next = { ...next, debt: accrueDebt(current.debt, (time - current.debtAt) / 60000), debtAt: time };
+                    const minutes = Math.max(0, (time - current.debtAt) / 60000);
+                    next = { ...next, debt: accrueDebt(current.debt, minutes), debtAt: time };
                 }
                 if (current.snoozeUntil && time >= current.snoozeUntil) {
                     next = { ...next, snoozeUntil: 0, expired: true };

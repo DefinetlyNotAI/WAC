@@ -45,6 +45,8 @@ export async function GET(): Promise<Response> {
     try {
         return response(await isWifiConnected());
     } catch {
-        return response(false);
+        // netsh may be absent, or no Wi-Fi adapter may exist on this device.
+        // Unknown is safer than falsely reporting no network connection.
+        return response(null);
     }
 }

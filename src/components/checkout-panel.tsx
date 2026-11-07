@@ -34,7 +34,7 @@ function CheckoutDialog({ app }: { app: App }) {
         setCard(previous => ({ ...previous, [field]: value }));
         setError('');
     };
-    const submit = (event: React.SubmitEvent<HTMLFormElement>) => {
+    const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const result = pay(card);
         if (result) setError(result);

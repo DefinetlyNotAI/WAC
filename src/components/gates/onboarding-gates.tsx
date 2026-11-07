@@ -1,4 +1,6 @@
 'use client';
+import { useEffect, useState } from 'react';
+import { LicenseDropdown } from '../hostile-ux';
 import type { useAlarmController } from '../use-alarm-controller';
 import { button } from '../ui-controls';
 import { terms, privacy } from '@/lib/legal';
@@ -8,6 +10,9 @@ import { day } from '@/app/config';
 export function OnboardingGates({ app }: { app: ReturnType<typeof useAlarmController> }) {
     const { gate, state, setGate, step, setStep, elapsed, fast, input, setInput, code, setCode, round, setRound, privacyY, privacyEnd, online, refusalPosition, refusalRef, sessionVersion, privacyRef, resume, update, notify, complete, open, afterForm } = app;
     const [clauseStep,setClauseStep]=useState(false);
+    useEffect(() => {
+        if (gate !== 'terms') setClauseStep(false);
+    }, [gate]);
     const finishLicense = () => { update({daily:day()});complete('terms');setClauseStep(false);setGate(null);resume.current(); };
     switch (gate) {
             case 'startup':
@@ -177,7 +182,7 @@ export function OnboardingGates({ app }: { app: ReturnType<typeof useAlarmContro
                                 setRound(r => r + 1);
                                 notify('Code accepted. Confirmation discarded; please resubmit.');
                             }
-                        });
+                        }).catch(() => notify('Authenticator verification is unavailable in this browser context.'));
                     })}</>;
         default: return null;
     }
