@@ -1,6 +1,7 @@
 'use client';
 import type { useAlarmController } from '../use-alarm-controller';
 import { button, stars } from '../ui-controls';
+import {WaitingFee} from '../hostile-ux';
 import { AlarmClock } from 'lucide-react';
 
 export function ServicesGates({ app }: { app: ReturnType<typeof useAlarmController> }) {
@@ -11,7 +12,7 @@ export function ServicesGates({ app }: { app: ReturnType<typeof useAlarmControll
                     <div className="subscription"><h3>WakeUp Premium</h3><strong>$29.99 / month</strong><p>Extend
                         dismissal beyond {state.score < 500 ? '09:00–12:00' : '09:00–17:00'}. Advertising and statutory
                         approvals remain applicable.</p></div>
-                    {button('Purchase Premium', () => purchase('premium'))}<p>Or return during your free dismissal
+                    <WaitingFee/>{button('Purchase Premium', () => purchase('premium'))}<p>Or return during your free dismissal
                     hours.</p></>;
             case 'banner':
                 return <><p>The free dismissal control is below this sponsored placement.</p>

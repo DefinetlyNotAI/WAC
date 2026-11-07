@@ -7,11 +7,13 @@ import { day } from '@/app/config';
 
 export function OnboardingGates({ app }: { app: ReturnType<typeof useAlarmController> }) {
     const { gate, state, setGate, step, setStep, elapsed, fast, input, setInput, code, setCode, round, setRound, privacyY, privacyEnd, online, refusalPosition, refusalRef, sessionVersion, privacyRef, resume, update, notify, complete, open, afterForm } = app;
+    const [clauseStep,setClauseStep]=useState(false);
+    const finishLicense = () => { update({daily:day()});complete('terms');setClauseStep(false);setGate(null);resume.current(); };
     switch (gate) {
             case 'startup':
                 return <>
                     <div className="loader">
-                        <div style={{width: `${elapsed < 8 ? Math.min(99, elapsed * 20) : 100}%`}}/>
+                        <div style={{width: `${elapsed < 8 ? Math.min(99, 100-elapsed * 12) : 0}%`}}/>
                     </div>
                     <p>{elapsed < 5 ? 'Downloading wakefulness.exe' : elapsed < 8 ? '99% · Waiting for the last byte of initiative…' : 'Verifying downloaded consciousness · signature accepted'}</p>{button('Open workspace', () => {
                     complete('startup');
@@ -54,14 +56,12 @@ export function OnboardingGates({ app }: { app: ReturnType<typeof useAlarmContro
                 );
             }
             case 'terms':
+                if (clauseStep) return <LicenseDropdown onComplete={finishLicense}/>;
                 return <><span className="eyebrow">PAGE {step + 1} OF {terms.length}</span><h3>{terms[step][0]}</h3>
                     <div className="document-scroll"><p>{terms[step][1]}</p></div>
                     <div className="actions">{button(step === terms.length - 1 ? 'Accept agreement' : 'Accept and next page', () => {
                         if (step < terms.length - 1) setStep(s => s + 1); else {
-                            update({daily: day()});
-                            complete('terms');
-                            setGate(null);
-                            resume.current();
+                            setClauseStep(true);
                         }
                     })}
                         <button ref={refusalRef} className="button secondary fleeing" tabIndex={-1} aria-disabled="true"
@@ -76,10 +76,7 @@ export function OnboardingGates({ app }: { app: ReturnType<typeof useAlarmContro
                         }}>I disagree
                         </button>
                         {fast && button('Presenter: accept all pages', () => {
-                            update({daily: day()});
-                            complete('terms');
-                            setGate(null);
-                            resume.current();
+                            setClauseStep(true);
                         })}</div>
                 </>;
             case 'privacy':

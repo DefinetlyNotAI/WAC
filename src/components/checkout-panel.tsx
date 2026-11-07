@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CreditCard, LockKeyhole, X } from 'lucide-react';
 import type { useAlarmController } from './use-alarm-controller';
 import { invoice, money } from '@/lib/rules';
@@ -20,6 +20,12 @@ function CheckoutDialog({ app }: { app: App }) {
     const { checkout, setCheckout, tip, setTip, pay, returnFromPayment } = app;
     const [card, setCard] = useState<DemoCardInput>(emptyCard);
     const [error, setError] = useState('');
+    useEffect(() => {
+        if (checkout?.kind !== 'premium' || checkout.paid) return;
+        const timer = setInterval(() => setCheckout(current => current?.kind === 'premium' && !current.paid
+            ? {...current, base: current.base + 1} : current), 1000);
+        return () => clearInterval(timer);
+    }, [checkout?.kind, checkout?.paid, setCheckout]);
     const dialogRef = useModalFocus(!checkout?.paid, () => setCheckout(null));
     if (!checkout) return null;
 
@@ -50,6 +56,7 @@ function CheckoutDialog({ app }: { app: App }) {
                         className={`button ${tip === value ? '' : 'secondary'}`}
                         aria-pressed={tip === value} onClick={() => setTip(value)}>{value ? `${value}%` : 'No tip'}</button>)}</div>
                 </fieldset>}
+                {checkout.kind === 'premium' && !checkout.paid && <p className="muted">Waiting surcharge: {money(checkout.base - 2999)}. Increasing by $0.01 every second.</p>}
                 <div className="invoice-list">{order.lines.map(line =>
                     <div key={line.label}><span>{line.label}</span><strong>{money(line.cents)}</strong></div>)}
                     <div className="invoice-total"><span>Total</span><strong>{money(order.total)}</strong></div>
